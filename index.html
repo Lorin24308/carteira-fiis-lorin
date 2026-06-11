@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carteira FIIs</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--border2:#cccac0;
+  --text:#1a1917;--text2:#6b6960;--text3:#9e9c95;
+  --green:#2e7d32;--green-bg:#e8f5e9;
+  --red:#b71c1c;--red-bg:#ffebee;
+  --amber:#e65100;--amber-bg:#fff3e0;
+  --blue:#1565c0;--blue-bg:#e3f2fd;
+  --accent:#1a56db;--r:10px;--rs:6px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.header-logo{font-size:16px;font-weight:600;letter-spacing:-.3px}.header-logo span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:10px}
+.upd{font-size:12px;color:var(--text3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;margin-right:4px;transition:background .3s}
+.sync-dot.ok{background:var(--green)}.sync-dot.err{background:var(--red)}.sync-dot.loading{background:var(--amber)}
+.btn-refresh{background:none;border:1px solid var(--border2);border-radius:var(--rs);padding:5px 12px;font-size:12px;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:5px;transition:background .15s}
+.btn-refresh:hover{background:var(--surface2)}
+.tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto}
+.tab{padding:12px 16px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.main{max-width:1100px;margin:0 auto;padding:24px}
+.page{display:none}.page.active{display:block}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.sc-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:6px}
+.sc-value{font-size:22px;font-weight:600;color:var(--text)}
+.sc-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.st{font-size:13px;font-weight:600;color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.bg{background:var(--green-bg);color:var(--green)}
+.br{background:var(--red-bg);color:var(--red)}
+.ba{background:var(--amber-bg);color:var(--amber)}
+.bb{background:var(--blue-bg);color:var(--blue)}
+.bgr{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.abox{background:var(--blue-bg);border:1px solid #bbdefb;border-radius:var(--r);padding:14px 18px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px}
+.abox-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.abox-title{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px}
+.abox-list{font-size:12px;color:#1e3a5f;line-height:2}
+.ar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.an{width:145px;font-size:13px;flex-shrink:0}
+.aw{flex:1}
+.ab{height:8px;background:var(--surface2);border-radius:4px;position:relative;overflow:visible}
+.af{height:8px;border-radius:4px;transition:width .4s}
+.am{position:absolute;top:-4px;height:16px;width:2px;background:var(--border2);border-radius:1px;transform:translateX(-50%)}
+.ap{display:flex;gap:10px;margin-top:3px;font-size:11px;color:var(--text3)}
+.ad{width:65px;text-align:right;font-size:12px;font-weight:500;flex-shrink:0}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.fg input:focus,.fg select:focus{border-color:var(--accent)}
+.btn{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;border-radius:var(--rs);border:none;transition:opacity .15s}
+.btn:hover{opacity:.85}.bp{background:var(--accent);color:#fff}
+.bs{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.bi{background:none;border:1px solid var(--border);border-radius:var(--rs);padding:4px 8px;cursor:pointer;font-size:13px;color:var(--text3);transition:background .15s,color .15s;line-height:1}
+.bi:hover{background:var(--red-bg);color:var(--red);border-color:#ffcdd2}
+.bi.edit:hover{background:var(--blue-bg);color:var(--blue);border-color:#bbdefb}
+.sim-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.sim-item:last-child{border-bottom:none}
+.sim-tipo{font-weight:500;font-size:13px}
+.sim-val{font-size:14px;font-weight:600;color:var(--accent)}
+.sim-pct{font-size:11px;color:var(--text3)}
+.empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.ticker{font-family:monospace;font-weight:600;font-size:13px}
+.res-bar-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin:8px 0 4px}
+.res-bar-fill{height:10px;border-radius:5px;background:var(--accent);transition:width .4s}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);padding:24px;width:420px;max-width:95vw;border:1px solid var(--border)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1917;color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;z-index:300;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:600px){.main{padding:12px}.tabs{padding:0 12px}.header{padding:0 14px}.an{width:100px;font-size:12px}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">Carteira <span>FIIs</span></div>
+  <div class="header-right">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="upd" id="upd">Conectando...</span>
+    <button class="btn-refresh" onclick="init()">↻ Atualizar</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" onclick="sw('dashboard',this)">Dashboard</button>
+  <button class="tab" onclick="sw('carteira',this)">Carteira</button>
+  <button class="tab" onclick="sw('alocacao',this)">Alocação</button>
+  <button class="tab" onclick="sw('dividendos',this)">Dividendos</button>
+  <button class="tab" onclick="sw('movimentos',this)">Movimentos</button>
+  <button class="tab" onclick="sw('reserva',this)">Reserva</button>
+  <button class="tab" onclick="sw('estudo',this)">Estudo</button>
+</nav>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="sg">
+    <div class="sc"><div class="sc-label">Patrimônio</div><div class="sc-value" id="d-total">—</div><div class="sc-sub">valor de mercado</div></div>
+    <div class="sc"><div class="sc-label">Custo total</div><div class="sc-value" id="d-custo">—</div><div class="sc-sub">valor investido</div></div>
+    <div class="sc"><div class="sc-label">Resultado</div><div class="sc-value" id="d-result">—</div><div class="sc-sub" id="d-rpct">—</div></div>
+    <div class="sc"><div class="sc-label">Dividendos</div><div class="sc-value" id="d-divid">R$ 0,00</div><div class="sc-sub">acumulados</div></div>
+    <div class="sc"><div class="sc-label">Reserva</div><div class="sc-value" id="d-res">—</div><div class="sc-sub" id="d-res-pct">—</div></div>
+  </div>
+  <div id="abox" class="abox" style="display:none">
+    <div class="abox-icon">🎯</div>
+    <div><div class="abox-title">Próximo aporte — sugestão</div><div class="abox-list" id="abox-lista"></div></div>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Alocação atual vs meta</div></div>
+    <div id="alloc-chart"></div>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Posições</div></div>
+    <table><thead><tr><th>Ticker</th><th>Tipo</th><th>Cotas</th><th>P. Atual</th><th>Valor</th><th>Resultado</th><th>% Cart.</th></tr></thead>
+    <tbody id="dash-table"></tbody></table>
+  </div>
+</div>
+
+<!-- CARTEIRA -->
+<div id="page-carteira" class="page">
+  <div class="section">
+    <div class="sh"><div class="st">Adicionar FII</div></div>
+    <div class="fg">
+      <div><label>Ticker</label><input id="f-ticker" placeholder="Ex: HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Tipo</label><select id="f-tipo">
+        <option>Papel</option><option>Logística</option><option>Shopping</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+      </select></div>
+      <div><label>Qtd. cotas</label><input id="f-cotas" type="number" min="0" step="1" placeholder="0"></div>
+      <div><label>Preço médio (R$)</label><input id="f-pmedio" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <button class="btn bp" onclick="addFII()">+ Adicionar FII</button>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Minha carteira</div></div>
+    <table><thead><tr><th>Ticker</th><th>Tipo</th><th>Cotas</th><th>P. Médio</th><th>P. Atual</th><th>V. Investido</th><th>V. Atual</th><th>Resultado</th><th>P/VP</th><th>DY</th><th></th></tr></thead>
+    <tbody id="cart-table"></tbody></table>
+  </div>
+</div>
+
+<!-- ALOCAÇÃO -->
+<div id="page-alocacao" class="page">
+  <div class="section">
+    <div class="sh"><div class="st">Metas por tipo</div></div>
+    <table><thead><tr><th>Tipo</th><th>Meta</th><th>Atual</th><th>Dif.</th><th>Valor atual</th><th>Falta p/ meta</th><th>Cotas aprox.</th><th>Status</th></tr></thead>
+    <tbody id="alloc-table"></tbody></table>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Simular aporte</div></div>
+    <div class="fg" style="max-width:320px">
+      <div><label>Valor disponível (R$)</label><input id="sim-val" type="number" min="0" step="0.01" placeholder="500,00"></div>
+    </div>
+    <button class="btn bp" onclick="simAporte()">Simular →</button>
+    <div id="sim-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- DIVIDENDOS -->
+<div id="page-dividendos" class="page">
+  <div class="section">
+    <div class="sh"><div class="st">Registrar dividendo</div></div>
+    <div class="fg">
+      <div><label>Data</label><input id="dv-data" type="date"></div>
+      <div><label>Ticker</label><input id="dv-ticker" placeholder="HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Valor (R$)</label><input id="dv-val" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Mês referência</label><input id="dv-mes" type="month"></div>
+    </div>
+    <button class="btn bp" onclick="addDivid()">+ Registrar</button>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Histórico</div><span style="font-size:13px;color:var(--text2)">Total: <strong id="divid-total">R$ 0,00</strong></span></div>
+    <table><thead><tr><th>Data</th><th>Ticker</th><th>Mês ref.</th><th>Valor</th><th></th></tr></thead>
+    <tbody id="divid-table"></tbody></table>
+  </div>
+</div>
+
+<!-- MOVIMENTOS -->
+<div id="page-movimentos" class="page">
+  <div class="section">
+    <div class="sh"><div class="st">Registrar movimentação</div></div>
+    <div class="fg">
+      <div><label>Data</label><input id="mv-data" type="date"></div>
+      <div><label>Operação</label><select id="mv-op"><option>Compra</option><option>Venda</option><option>Reinvestimento</option></select></div>
+      <div><label>Ticker</label><input id="mv-ticker" placeholder="HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Tipo</label><select id="mv-tipo">
+        <option>Papel</option><option>Logística</option><option>Shopping</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+      </select></div>
+      <div><label>Qtd. cotas</label><input id="mv-qtd" type="number" min="0" step="1" placeholder="0"></div>
+      <div><label>Preço unit. (R$)</label><input id="mv-preco" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Taxas (R$)</label><input id="mv-taxa" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <button class="btn bp" onclick="addMov()">+ Registrar</button>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Histórico</div></div>
+    <table><thead><tr><th>Data</th><th>Op.</th><th>Ticker</th><th>Tipo</th><th>Qtd.</th><th>Preço</th><th>Taxas</th><th>Total</th><th></th></tr></thead>
+    <tbody id="mov-table"></tbody></table>
+  </div>
+</div>
+
+<!-- RESERVA -->
+<div id="page-reserva" class="page">
+  <div class="sg" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <div class="sc"><div class="sc-label">Meta da reserva</div><div class="sc-value" id="res-meta-val">—</div><div class="sc-sub">objetivo total</div></div>
+    <div class="sc"><div class="sc-label">Reserva atual</div><div class="sc-value" id="res-atual-val">—</div><div class="sc-sub" id="res-falta-val">—</div></div>
+    <div class="sc"><div class="sc-label">Progresso</div><div class="sc-value" id="res-pct-val">—</div><div class="res-bar-bg"><div class="res-bar-fill" id="res-bar" style="width:0%"></div></div></div>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Configurar meta</div></div>
+    <div class="fg" style="max-width:400px">
+      <div><label>Meta (R$)</label><input id="res-meta-in" type="number" min="0" step="100" placeholder="10000"></div>
+      <div><label>Valor atual (R$)</label><input id="res-atual-in" type="number" min="0" step="0.01" placeholder="600"></div>
+    </div>
+    <button class="btn bp" onclick="saveReserva()">Salvar</button>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">Onde está guardada</div></div>
+    <div id="res-locs"></div>
+    <div class="fg" style="margin-top:12px">
+      <div><label>Local / Conta</label><input id="rl-local" placeholder="Ex: Nubank CDB"></div>
+      <div><label>Tipo</label><input id="rl-tipo" placeholder="CDB, Poupança..."></div>
+      <div><label>Valor (R$)</label><input id="rl-val" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Liquidez</label><input id="rl-liq" placeholder="D+0, D+1..."></div>
+    </div>
+    <button class="btn bp" onclick="addResLoc()">+ Adicionar local</button>
+  </div>
+</div>
+
+<!-- ESTUDO -->
+<div id="page-estudo" class="page">
+  <div class="section">
+    <div class="sh"><div class="st">Adicionar FII em estudo</div></div>
+    <div class="fg">
+      <div><label>Ticker</label><input id="es-ticker" placeholder="HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Nome</label><input id="es-nome" placeholder="Nome do fundo"></div>
+      <div><label>Tipo</label><select id="es-tipo">
+        <option>Papel</option><option>Logística</option><option>Shopping</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+      </select></div>
+      <div><label>P/VP</label><input id="es-pvp" type="number" step="0.01" placeholder="0,00"></div>
+      <div><label>DY 12m (%)</label><input id="es-dy" type="number" step="0.01" placeholder="0,0"></div>
+      <div><label>Liquidez diária</label><input id="es-liq" placeholder="R$ 1M/dia"></div>
+      <div><label>Status</label><select id="es-status">
+        <option>Estudar mais</option><option>Comprar</option><option>Acompanhar</option><option>Não comprar</option>
+      </select></div>
+      <div><label>Notas</label><input id="es-notas" placeholder="Observações..."></div>
+    </div>
+    <button class="btn bp" onclick="addEstudo()">+ Adicionar</button>
+  </div>
+  <div class="section">
+    <div class="sh"><div class="st">FIIs em estudo</div></div>
+    <table><thead><tr><th>Ticker</th><th>Nome</th><th>Tipo</th><th>P/VP</th><th>DY 12m</th><th>Liquidez</th><th>Status</th><th>Notas</th><th></th></tr></thead>
+    <tbody id="estudo-table"></tbody></table>
+  </div>
+</div>
+
+</main>
+
+<!-- MODAL EDIÇÃO FII -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Editar FII</div>
+    <div class="fg">
+      <div><label>Ticker</label><input id="e-ticker" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Tipo</label><select id="e-tipo">
+        <option>Papel</option><option>Logística</option><option>Shopping</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+      </select></div>
+      <div><label>Qtd. cotas</label><input id="e-cotas" type="number" min="0" step="1"></div>
+      <div><label>Preço médio (R$)</label><input id="e-pmedio" type="number" min="0" step="0.01"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeModal()">Cancelar</button>
+      <button class="btn bp" onclick="saveEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────
+const SB_URL  = 'https://pcsnkxnxafwqzqrsrkjw.supabase.co';
+const SB_KEY  = 'sb_publishable_zXRySMw7MLGNIww7_e5IFg_5eDMZNkx';
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SB_KEY,
+  'Authorization': `Bearer ${SB_KEY}`,
+  'Prefer': 'return=representation'
+};
+
+const METAS = {
+  "Papel":0.30,"Logística":0.20,"Shopping":0.20,
+  "Renda Urbana":0.10,"Lajes Corporativas":0.10,
+  "FoF":0.05,"Híbrido/Outros":0.05
+};
+const CORES = {
+  "Papel":"#1565c0","Logística":"#2e7d32","Shopping":"#e65100",
+  "Renda Urbana":"#c2185b","Lajes Corporativas":"#6a1b9a",
+  "FoF":"#00695c","Híbrido/Outros":"#546e7a"
+};
+
+// ── ESTADO LOCAL ─────────────────────────────────────────────────────────
+let D = { fiis:[], dividendos:[], movimentos:[], reserva:{id:null,meta:10000,atual:600}, reserva_locs:[], estudo:[] };
+let editIdx = null;
+
+// ── UTILS ────────────────────────────────────────────────────────────────
+const fmt  = v => "R$ "+(+v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtP = v => (v*100).toFixed(1)+"%";
+const pa   = f => f.preco!=null ? f.preco : f.pmedio;
+
+function setSyncStatus(status, msg) {
+  const dot = document.getElementById("sync-dot");
+  const upd = document.getElementById("upd");
+  dot.className = "sync-dot " + status;
+  upd.textContent = msg;
+}
+
+function toast(msg, dur=2500) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), dur);
+}
+
+// ── SUPABASE API ─────────────────────────────────────────────────────────
+async function sbGet(table, query='') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}&order=created_at.asc`, {headers: HEADERS});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPost(table, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {method:'POST', headers: HEADERS, body: JSON.stringify(body)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbPatch(table, id, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {method:'PATCH', headers: HEADERS, body: JSON.stringify(body)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbDelete(table, id) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`, {method:'DELETE', headers: HEADERS});
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+async function init() {
+  setSyncStatus("loading", "Carregando...");
+  try {
+    const [fiis, divs, movs, res, locs, est] = await Promise.all([
+      sbGet('fiis'),
+      sbGet('dividendos'),
+      sbGet('movimentos'),
+      sbGet('reserva'),
+      sbGet('reserva_locs'),
+      sbGet('estudo')
+    ]);
+    D.fiis         = fiis;
+    D.dividendos   = divs;
+    D.movimentos   = movs;
+    D.reserva      = res[0] || {id:null, meta:10000, atual:600};
+    D.reserva_locs = locs;
+    D.estudo       = est;
+    setSyncStatus("loading", "Buscando preços...");
+    await fetchPrices();
+    setSyncStatus("ok", "Sincronizado ✓");
+    render();
+  } catch(e) {
+    setSyncStatus("err", "Erro de conexão");
+    console.error(e);
+  }
+}
+
+// ── PREÇOS ───────────────────────────────────────────────────────────────
+async function fetchPrices() {
+  if (!D.fiis.length) return;
+  const tickers = D.fiis.map(f => f.ticker).join(",");
+  try {
+    const r = await fetch(`https://brapi.dev/api/quote/${tickers}?fundamental=true&token=guest`);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    if (d.results) {
+      for (const q of d.results) {
+        const f = D.fiis.find(x => x.ticker === q.symbol);
+        if (!f) continue;
+        if (q.regularMarketPrice) f.preco = q.regularMarketPrice;
+        if (q.priceToBook != null) f.pvp = q.priceToBook;
+        if (q.dividendYield != null) f.dy = q.dividendYield;
+        if (q.shortName) f.nome = q.shortName;
+      }
+    }
+  } catch(e) {
+    D.fiis.forEach(f => { if (f.preco == null) f.preco = f.pmedio; });
+  }
+}
+
+// ── CÁLCULOS ─────────────────────────────────────────────────────────────
+function totais() {
+  let tm=0, tc=0;
+  D.fiis.forEach(f => { tm += f.cotas * pa(f); tc += f.cotas * f.pmedio; });
+  return {tm, tc};
+}
+function aloc() {
+  const {tm} = totais();
+  const a = {}; Object.keys(METAS).forEach(t => a[t]=0);
+  D.fiis.forEach(f => { const k = f.tipo in a ? f.tipo : "Híbrido/Outros"; a[k] += f.cotas * pa(f); });
+  return {a, tm};
+}
+function precoPorTipo() {
+  const p = {};
+  Object.keys(METAS).forEach(t => {
+    const ff = D.fiis.filter(f => (f.tipo in METAS ? f.tipo : "Híbrido/Outros") === t);
+    if (ff.length) {
+      const tc = ff.reduce((s,f) => s+f.cotas, 0);
+      p[t] = ff.reduce((s,f) => s + pa(f)*f.cotas, 0) / tc;
+    } else p[t] = null;
+  });
+  return p;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() { rDash(); rCart(); rAloc(); rDivid(); rMov(); rReserva(); rEstudo(); }
+
+function rDash() {
+  const {tm, tc} = totais();
+  const res = tm - tc, pct = tc > 0 ? res/tc : 0;
+  document.getElementById("d-total").textContent = fmt(tm);
+  document.getElementById("d-custo").textContent = fmt(tc);
+  const er = document.getElementById("d-result");
+  er.textContent = fmt(res); er.className = "sc-value " + (res>=0?"pos":"neg");
+  document.getElementById("d-rpct").textContent = (res>=0?"+":"") + fmtP(pct) + " desde o custo";
+  const td = D.dividendos.reduce((a,d) => a+d.valor, 0);
+  document.getElementById("d-divid").textContent = fmt(td);
+  const rv = D.reserva, pct2 = rv.meta>0 ? rv.atual/rv.meta : 0;
+  document.getElementById("d-res").textContent = fmt(rv.atual);
+  document.getElementById("d-res-pct").textContent = fmtP(pct2) + " da meta";
+
+  const {a} = aloc();
+  let sugs = [];
+  Object.entries(METAS).forEach(([t,m]) => {
+    const at = tm>0 ? a[t]/tm : 0;
+    const df = m - at;
+    const faltaR = tm>0 ? Math.max(0, (m*tm - a[t]) / (1-m)) : 0;
+    if (df > 0.005) sugs.push({t, df, m, at, faltaR});
+  });
+  sugs.sort((a,b) => b.df - a.df);
+  const ab = document.getElementById("abox");
+  if (sugs.length > 0 && tm > 0) {
+    ab.style.display = "flex";
+    document.getElementById("abox-lista").innerHTML = sugs.slice(0,4).map(s =>
+      `▸ <strong>${s.t}</strong> — atual ${fmtP(s.at)}, meta ${fmtP(s.m)} <span style="color:var(--accent);font-weight:600">(~${fmt(s.faltaR)} para equilibrar)</span>`
+    ).join("<br>");
+  } else ab.style.display = "none";
+
+  let ch = "";
+  Object.entries(METAS).forEach(([t,m]) => {
+    const at = tm>0 ? a[t]/tm : 0, df = at-m;
+    const pB = m>0 ? Math.min(at/m, 1.5)*100 : 0;
+    ch += `<div class="ar"><div class="an">${t}</div><div class="aw">
+      <div class="ab"><div class="af" style="width:${Math.min(pB/1.5,100)}%;background:${CORES[t]}"></div>
+      <div class="am" style="left:${100/1.5}%"></div></div>
+      <div class="ap"><span>${fmtP(at)} atual</span><span>meta: ${fmtP(m)}</span></div>
+    </div><div class="ad ${df>=0?'pos':'neg'}">${df>=0?"+":""}${fmtP(df)}</div></div>`;
+  });
+  document.getElementById("alloc-chart").innerHTML = ch;
+
+  let rows = "";
+  D.fiis.forEach(f => {
+    const p=pa(f), v=f.cotas*p, r=f.cotas*(p-f.pmedio), rp=f.pmedio>0?(p-f.pmedio)/f.pmedio:0, cp=tm>0?v/tm:0;
+    rows += `<tr><td class="ticker">${f.ticker}</td><td><span class="badge bgr">${f.tipo}</span></td><td>${f.cotas}</td><td>${fmt(p)}</td><td>${fmt(v)}</td><td class="${r>=0?'pos':'neg'}">${fmt(r)} (${(rp*100).toFixed(1)}%)</td><td>${fmtP(cp)}</td></tr>`;
+  });
+  document.getElementById("dash-table").innerHTML = rows || `<tr><td colspan="7"><div class="empty">Nenhum FII cadastrado</div></td></tr>`;
+}
+
+function rCart() {
+  let rows = "";
+  D.fiis.forEach((f,i) => {
+    const p=pa(f), vi=f.cotas*f.pmedio, va=f.cotas*p, r=va-vi, rp=f.pmedio>0?(p-f.pmedio)/f.pmedio:0;
+    rows += `<tr>
+      <td class="ticker">${f.ticker}</td><td>${f.tipo}</td><td>${f.cotas}</td>
+      <td>${fmt(f.pmedio)}</td><td>${fmt(p)}</td><td>${fmt(vi)}</td><td>${fmt(va)}</td>
+      <td class="${r>=0?'pos':'neg'}">${r>=0?"+":""}${fmt(r)} (${(rp*100).toFixed(1)}%)</td>
+      <td>${f.pvp!=null?f.pvp.toFixed(2):"—"}</td>
+      <td>${f.dy!=null?(f.dy*100).toFixed(1)+"%":"—"}</td>
+      <td style="display:flex;gap:4px">
+        <button class="bi edit" onclick="openEdit(${i})" title="Editar">✏️</button>
+        <button class="bi" onclick="remFII('${f.id}')" title="Remover">🗑</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById("cart-table").innerHTML = rows || `<tr><td colspan="11"><div class="empty">Nenhum FII cadastrado</div></td></tr>`;
+}
+
+async function addFII() {
+  const ticker = document.getElementById("f-ticker").value.trim().toUpperCase();
+  const tipo   = document.getElementById("f-tipo").value;
+  const cotas  = parseFloat(document.getElementById("f-cotas").value)||0;
+  const pmedio = parseFloat(document.getElementById("f-pmedio").value)||0;
+  if (!ticker||cotas<=0||pmedio<=0) { alert("Preencha ticker, cotas e preço médio."); return; }
+  try {
+    const [novo] = await sbPost('fiis', {ticker, tipo, cotas, pmedio});
+    D.fiis.push(novo);
+    ["f-ticker","f-cotas","f-pmedio"].forEach(id => document.getElementById(id).value="");
+    toast("FII adicionado!");
+    await fetchPrices(); render();
+  } catch(e) { alert("Erro ao salvar: "+e.message); }
+}
+
+async function remFII(id) {
+  if (!confirm("Remover este FII da carteira?")) return;
+  try {
+    await sbDelete('fiis', id);
+    D.fiis = D.fiis.filter(f => f.id !== id);
+    toast("FII removido.");
+    render();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+
+function openEdit(i) {
+  editIdx = i; const f = D.fiis[i];
+  document.getElementById("e-ticker").value = f.ticker;
+  document.getElementById("e-tipo").value   = f.tipo;
+  document.getElementById("e-cotas").value  = f.cotas;
+  document.getElementById("e-pmedio").value = f.pmedio;
+  document.getElementById("edit-modal").classList.add("open");
+}
+function closeModal() { document.getElementById("edit-modal").classList.remove("open"); editIdx=null; }
+async function saveEdit() {
+  if (editIdx===null) return;
+  const f = D.fiis[editIdx];
+  const upd = {
+    ticker: document.getElementById("e-ticker").value.trim().toUpperCase(),
+    tipo:   document.getElementById("e-tipo").value,
+    cotas:  parseFloat(document.getElementById("e-cotas").value)||f.cotas,
+    pmedio: parseFloat(document.getElementById("e-pmedio").value)||f.pmedio
+  };
+  try {
+    await sbPatch('fiis', f.id, upd);
+    Object.assign(f, upd);
+    closeModal(); toast("FII atualizado!");
+    await fetchPrices(); render();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+document.getElementById("edit-modal").addEventListener("click", function(e){if(e.target===this)closeModal();});
+
+function rAloc() {
+  const {a, tm} = aloc();
+  const pp = precoPorTipo();
+  let rows = "";
+  Object.entries(METAS).forEach(([t,m]) => {
+    const v=a[t], at=tm>0?v/tm:0, df=at-m;
+    const faltaR = tm>0 && df<0 ? Math.max(0,(m*tm-v)/(1-m)) : 0;
+    const preco  = pp[t];
+    const cotasAprox = (faltaR>0 && preco) ? Math.ceil(faltaR/preco) : null;
+    let bc, sl;
+    if (df>=-0.02){bc="bg";sl="✓ No alvo";}
+    else if (df>=-0.05){bc="ba";sl="~ Próximo";}
+    else {bc="br";sl="↓ Abaixo";}
+    rows += `<tr>
+      <td style="font-weight:500">${t}</td><td>${fmtP(m)}</td><td>${fmtP(at)}</td>
+      <td class="${df>=0?'pos':'neg'}">${df>=0?"+":""}${fmtP(df)}</td><td>${fmt(v)}</td>
+      <td>${faltaR>0.01?`<span style="color:var(--accent);font-weight:600">${fmt(faltaR)}</span>`:`<span class="badge bg">OK</span>`}</td>
+      <td>${cotasAprox?`<span style="font-size:12px;color:var(--text2)">~${cotasAprox} cota${cotasAprox>1?'s':''} @ ${fmt(preco)}</span>`:`<span style="color:var(--text3);font-size:12px">—</span>`}</td>
+      <td><span class="badge ${bc}">${sl}</span></td>
+    </tr>`;
+  });
+  document.getElementById("alloc-table").innerHTML = rows;
+}
+
+function simAporte() {
+  const valor = parseFloat(document.getElementById("sim-val").value)||0;
+  if (valor<=0) { alert("Digite um valor."); return; }
+  const {a, tm} = aloc(); const tn = tm+valor;
+  const pp = precoPorTipo();
+  let sugs = [];
+  Object.entries(METAS).forEach(([t,m]) => { const at=tm>0?a[t]/tm:0, df=m-at; if(df>0) sugs.push({t,df,m,at,v:a[t]}); });
+  sugs.sort((a,b) => b.df-a.df);
+  if (!sugs.length) { document.getElementById("sim-result").innerHTML=`<p style="color:var(--text2)">Carteira equilibrada!</p>`; return; }
+  const td = sugs.reduce((a,x)=>a+x.df,0);
+  let html = `<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Sugestão para <strong>${fmt(valor)}</strong>:</div>`;
+  sugs.forEach(s => {
+    const ap=valor*(s.df/td), np=(s.v+ap)/tn, preco=pp[s.t];
+    const cotas = preco ? Math.floor(ap/preco) : null;
+    const cotasTxt = cotas!=null ? `<span style="font-size:11px;color:var(--text3);margin-left:8px">≈ ${cotas} cota${cotas!==1?'s':''} @ ${fmt(preco)}</span>` : "";
+    html += `<div class="sim-item"><div><div class="sim-tipo">${s.t}${cotasTxt}</div><div class="sim-pct">${fmtP(s.at)} → ${fmtP(np)} (meta: ${fmtP(s.m)})</div></div><div class="sim-val">${fmt(ap)}</div></div>`;
+  });
+  document.getElementById("sim-result").innerHTML = html;
+}
+
+async function addDivid() {
+  const data   = document.getElementById("dv-data").value;
+  const ticker = document.getElementById("dv-ticker").value.trim().toUpperCase();
+  const valor  = parseFloat(document.getElementById("dv-val").value)||0;
+  const mes_ref= document.getElementById("dv-mes").value;
+  if (!data||!ticker||valor<=0) { alert("Preencha data, ticker e valor."); return; }
+  try {
+    const [novo] = await sbPost('dividendos', {data, ticker, valor, mes_ref});
+    D.dividendos.push(novo);
+    ["dv-data","dv-ticker","dv-val","dv-mes"].forEach(id => document.getElementById(id).value="");
+    toast("Dividendo registrado!"); rDivid();
+    document.getElementById("d-divid").textContent = fmt(D.dividendos.reduce((a,d)=>a+d.valor,0));
+  } catch(e) { alert("Erro: "+e.message); }
+}
+async function remDivid(id) {
+  try { await sbDelete('dividendos', id); D.dividendos = D.dividendos.filter(d=>d.id!==id); rDivid(); } catch(e) { alert("Erro: "+e.message); }
+}
+function rDivid() {
+  let rows="", total=0;
+  [...D.dividendos].sort((a,b)=>b.data.localeCompare(a.data)).forEach(d => {
+    total += d.valor;
+    rows += `<tr><td>${d.data}</td><td class="ticker">${d.ticker}</td><td>${d.mes_ref||"—"}</td><td>${fmt(d.valor)}</td><td><button class="bi" onclick="remDivid('${d.id}')">🗑</button></td></tr>`;
+  });
+  document.getElementById("divid-table").innerHTML = rows || `<tr><td colspan="5"><div class="empty">Nenhum dividendo registrado</div></td></tr>`;
+  document.getElementById("divid-total").textContent = fmt(total);
+}
+
+async function addMov() {
+  const data   = document.getElementById("mv-data").value;
+  const operacao = document.getElementById("mv-op").value;
+  const ticker = document.getElementById("mv-ticker").value.trim().toUpperCase();
+  const tipo   = document.getElementById("mv-tipo").value;
+  const qtd    = parseFloat(document.getElementById("mv-qtd").value)||0;
+  const preco  = parseFloat(document.getElementById("mv-preco").value)||0;
+  const taxa   = parseFloat(document.getElementById("mv-taxa").value)||0;
+  if (!data||!ticker) { alert("Preencha data e ticker."); return; }
+  const total = qtd*preco+taxa;
+  try {
+    const [novo] = await sbPost('movimentos', {data, operacao, ticker, tipo, qtd, preco, taxa, total});
+    D.movimentos.push(novo);
+    ["mv-data","mv-ticker","mv-qtd","mv-preco","mv-taxa"].forEach(id => document.getElementById(id).value="");
+    toast("Movimentação registrada!"); rMov();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+async function remMov(id) {
+  try { await sbDelete('movimentos', id); D.movimentos = D.movimentos.filter(m=>m.id!==id); rMov(); } catch(e) { alert("Erro: "+e.message); }
+}
+function rMov() {
+  let rows = "";
+  [...D.movimentos].sort((a,b)=>b.data.localeCompare(a.data)).forEach(m => {
+    const bc = m.operacao==="Venda"?"ba":"bb";
+    rows += `<tr><td>${m.data}</td><td><span class="badge ${bc}">${m.operacao}</span></td><td class="ticker">${m.ticker}</td><td>${m.tipo||"—"}</td><td>${m.qtd}</td><td>${fmt(m.preco)}</td><td>${fmt(m.taxa)}</td><td>${fmt(m.total)}</td><td><button class="bi" onclick="remMov('${m.id}')">🗑</button></td></tr>`;
+  });
+  document.getElementById("mov-table").innerHTML = rows || `<tr><td colspan="9"><div class="empty">Nenhuma movimentação</div></td></tr>`;
+}
+
+async function saveReserva() {
+  const meta  = parseFloat(document.getElementById("res-meta-in").value)||D.reserva.meta;
+  const atual = parseFloat(document.getElementById("res-atual-in").value)||D.reserva.atual;
+  try {
+    await sbPatch('reserva', D.reserva.id, {meta, atual});
+    D.reserva.meta = meta; D.reserva.atual = atual;
+    toast("Reserva atualizada!"); rReserva(); rDash();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+async function addResLoc() {
+  const local    = document.getElementById("rl-local").value.trim();
+  const tipo     = document.getElementById("rl-tipo").value.trim();
+  const valor    = parseFloat(document.getElementById("rl-val").value)||0;
+  const liquidez = document.getElementById("rl-liq").value.trim();
+  if (!local||valor<=0) { alert("Preencha local e valor."); return; }
+  try {
+    const [novo] = await sbPost('reserva_locs', {local, tipo, valor, liquidez});
+    D.reserva_locs.push(novo);
+    ["rl-local","rl-tipo","rl-val","rl-liq"].forEach(id => document.getElementById(id).value="");
+    toast("Local adicionado!"); rReserva();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+async function remResLoc(id) {
+  try { await sbDelete('reserva_locs', id); D.reserva_locs = D.reserva_locs.filter(l=>l.id!==id); rReserva(); } catch(e) { alert("Erro: "+e.message); }
+}
+function rReserva() {
+  const rv=D.reserva, pct=rv.meta>0?rv.atual/rv.meta:0;
+  document.getElementById("res-meta-val").textContent = fmt(rv.meta);
+  document.getElementById("res-atual-val").textContent = fmt(rv.atual);
+  document.getElementById("res-falta-val").textContent = `Faltam ${fmt(Math.max(0,rv.meta-rv.atual))}`;
+  document.getElementById("res-pct-val").textContent = fmtP(pct);
+  document.getElementById("res-bar").style.width = Math.min(pct*100,100)+"%";
+  document.getElementById("res-meta-in").value = rv.meta;
+  document.getElementById("res-atual-in").value = rv.atual;
+  let rows = "";
+  if (D.reserva_locs.length) {
+    rows = `<table><thead><tr><th>Local</th><th>Tipo</th><th>Valor</th><th>Liquidez</th><th></th></tr></thead><tbody>`;
+    D.reserva_locs.forEach(l => { rows+=`<tr><td>${l.local}</td><td>${l.tipo||"—"}</td><td>${fmt(l.valor)}</td><td>${l.liquidez||"—"}</td><td><button class="bi" onclick="remResLoc('${l.id}')">🗑</button></td></tr>`; });
+    rows += `</tbody></table>`;
+  } else rows = `<div class="empty">Nenhum local cadastrado</div>`;
+  document.getElementById("res-locs").innerHTML = rows;
+}
+
+async function addEstudo() {
+  const ticker  = document.getElementById("es-ticker").value.trim().toUpperCase();
+  const nome    = document.getElementById("es-nome").value.trim();
+  const tipo    = document.getElementById("es-tipo").value;
+  const pvp     = parseFloat(document.getElementById("es-pvp").value)||null;
+  const dy      = parseFloat(document.getElementById("es-dy").value)||null;
+  const liquidez= document.getElementById("es-liq").value.trim();
+  const status  = document.getElementById("es-status").value;
+  const notas   = document.getElementById("es-notas").value.trim();
+  if (!ticker) { alert("Preencha o ticker."); return; }
+  try {
+    const [novo] = await sbPost('estudo', {ticker, nome, tipo, pvp, dy, liquidez, status, notas});
+    D.estudo.push(novo);
+    ["es-ticker","es-nome","es-pvp","es-dy","es-liq","es-notas"].forEach(id => document.getElementById(id).value="");
+    toast("FII adicionado ao estudo!"); rEstudo();
+  } catch(e) { alert("Erro: "+e.message); }
+}
+async function remEstudo(id) {
+  try { await sbDelete('estudo', id); D.estudo = D.estudo.filter(e=>e.id!==id); rEstudo(); } catch(e) { alert("Erro: "+e.message); }
+}
+function rEstudo() {
+  let rows = "";
+  D.estudo.forEach(e => {
+    const sc = e.status==="Comprar"?"bg":e.status==="Não comprar"?"br":e.status==="Acompanhar"?"ba":"bgr";
+    rows += `<tr><td class="ticker">${e.ticker}</td><td>${e.nome||"—"}</td><td>${e.tipo||"—"}</td><td>${e.pvp!=null?e.pvp.toFixed(2):"—"}</td><td>${e.dy!=null?e.dy.toFixed(1)+"%":"—"}</td><td>${e.liquidez||"—"}</td><td><span class="badge ${sc}">${e.status}</span></td><td style="max-width:200px;font-size:12px;color:var(--text2)">${e.notas||"—"}</td><td><button class="bi" onclick="remEstudo('${e.id}')">🗑</button></td></tr>`;
+  });
+  document.getElementById("estudo-table").innerHTML = rows || `<tr><td colspan="9"><div class="empty">Nenhum FII em estudo</div></td></tr>`;
+}
+
+function sw(tab, el) {
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("page-"+tab).classList.add("active");
+}
+
+init();
+</script>
+</body>
+</html>

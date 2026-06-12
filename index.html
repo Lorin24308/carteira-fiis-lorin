@@ -637,20 +637,56 @@ function rDivid() {
 }
 
 async function addMov() {
-  const data   = document.getElementById("mv-data").value;
+  const data     = document.getElementById("mv-data").value;
   const operacao = document.getElementById("mv-op").value;
-  const ticker = document.getElementById("mv-ticker").value.trim().toUpperCase();
-  const tipo   = document.getElementById("mv-tipo").value;
-  const qtd    = parseFloat(document.getElementById("mv-qtd").value)||0;
-  const preco  = parseFloat(document.getElementById("mv-preco").value)||0;
-  const taxa   = parseFloat(document.getElementById("mv-taxa").value)||0;
-  if (!data||!ticker) { alert("Preencha data e ticker."); return; }
+  const ticker   = document.getElementById("mv-ticker").value.trim().toUpperCase();
+  const tipo     = document.getElementById("mv-tipo").value;
+  const qtd      = parseFloat(document.getElementById("mv-qtd").value)||0;
+  const preco    = parseFloat(document.getElementById("mv-preco").value)||0;
+  const taxa     = parseFloat(document.getElementById("mv-taxa").value)||0;
+  if (!data||!ticker||qtd<=0||preco<=0) { alert("Preencha todos os campos."); return; }
   const total = qtd*preco+taxa;
   try {
+    // 1. Salva a movimentação
     const [novo] = await sbPost('movimentos', {data, operacao, ticker, tipo, qtd, preco, taxa, total});
     D.movimentos.push(novo);
+
+    // 2. Atualiza a carteira automaticamente
+    const fiiExistente = D.fiis.find(f => f.ticker === ticker);
+    if (operacao === 'Compra' || operacao === 'Reinvestimento') {
+      if (fiiExistente) {
+        // Recalcula preço médio ponderado e soma cotas
+        const novasCotas  = fiiExistente.cotas + qtd;
+        const novoPmedio  = ((fiiExistente.cotas * fiiExistente.pmedio) + (qtd * preco)) / novasCotas;
+        await sbPatch('fiis', fiiExistente.id, {cotas: novasCotas, pmedio: +novoPmedio.toFixed(4)});
+        fiiExistente.cotas  = novasCotas;
+        fiiExistente.pmedio = +novoPmedio.toFixed(4);
+        toast(`Carteira atualizada — ${ticker}: ${novasCotas} cotas @ ${fmt(novoPmedio)}`);
+      } else {
+        // FII novo — adiciona na carteira
+        const [novoFii] = await sbPost('fiis', {ticker, tipo, cotas: qtd, pmedio: preco});
+        D.fiis.push(novoFii);
+        toast(`${ticker} adicionado à carteira!`);
+      }
+    } else if (operacao === 'Venda') {
+      if (fiiExistente) {
+        const novasCotas = fiiExistente.cotas - qtd;
+        if (novasCotas <= 0) {
+          // Remove o FII da carteira se zerou
+          await sbDelete('fiis', fiiExistente.id);
+          D.fiis = D.fiis.filter(f => f.id !== fiiExistente.id);
+          toast(`${ticker} removido da carteira (posição zerada).`);
+        } else {
+          await sbPatch('fiis', fiiExistente.id, {cotas: novasCotas});
+          fiiExistente.cotas = novasCotas;
+          toast(`Venda registrada — ${ticker}: ${novasCotas} cotas restantes.`);
+        }
+      }
+    }
+
     ["mv-data","mv-ticker","mv-qtd","mv-preco","mv-taxa"].forEach(id => document.getElementById(id).value="");
-    toast("Movimentação registrada!"); rMov();
+    await fetchPrices();
+    render();
   } catch(e) { alert("Erro: "+e.message); }
 }
 async function remMov(id) {

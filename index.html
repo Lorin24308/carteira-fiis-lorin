@@ -348,7 +348,7 @@ function toast(msg, dur=2500) {
 
 // ── SUPABASE API ─────────────────────────────────────────────────────────
 async function sbGet(table, query='') {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}&order=created_at.asc`, {headers: HEADERS});
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, {headers: HEADERS});
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }

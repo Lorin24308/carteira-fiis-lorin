@@ -398,23 +398,21 @@ async function init() {
 // ── PREÇOS ───────────────────────────────────────────────────────────────
 async function fetchPrices() {
   if (!D.fiis.length) return;
-  const tickers = D.fiis.map(f => f.ticker).join(",");
-  try {
-    const r = await fetch(`https://brapi.dev/api/quote/${tickers}?fundamental=true&token=oEoWzmy9jNacHN4FZ5yQ4E`);
-    if (!r.ok) throw new Error();
-    const d = await r.json();
-    if (d.results) {
-      for (const q of d.results) {
-        const f = D.fiis.find(x => x.ticker === q.symbol);
-        if (!f) continue;
+  for (const f of D.fiis) {
+    try {
+      const r = await fetch(`https://brapi.dev/api/quote/${f.ticker}?fundamental=true&token=oEoWzmy9jNacHN4FZ5yQ4E`);
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d.results && d.results[0]) {
+        const q = d.results[0];
         if (q.regularMarketPrice) f.preco = q.regularMarketPrice;
         if (q.priceToBook != null) f.pvp = q.priceToBook;
         if (q.dividendYield != null) f.dy = q.dividendYield;
         if (q.shortName) f.nome = q.shortName;
       }
+    } catch(e) {
+      if (f.preco == null) f.preco = f.pmedio;
     }
-  } catch(e) {
-    D.fiis.forEach(f => { if (f.preco == null) f.preco = f.pmedio; });
   }
 }
 

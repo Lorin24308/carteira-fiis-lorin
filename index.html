@@ -78,6 +78,9 @@ tbody tr:hover{background:var(--bg)}
 .sim-pct{font-size:11px;color:var(--text3)}
 .empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
 .pos{color:var(--green)}.neg{color:var(--red)}
+.th-sort{cursor:pointer;user-select:none;white-space:nowrap}
+.th-sort:hover{color:var(--text);background:var(--surface2)}
+.th-sort span{font-size:10px;margin-left:2px;color:var(--accent)}
 .ticker{font-family:monospace;font-weight:600;font-size:13px}
 .res-bar-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin:8px 0 4px}
 .res-bar-fill{height:10px;border-radius:5px;background:var(--accent);transition:width .4s}
@@ -141,22 +144,34 @@ tbody tr:hover{background:var(--bg)}
 <!-- CARTEIRA -->
 <div id="page-carteira" class="page">
   <div class="section">
-    <div class="sh"><div class="st">Adicionar FII</div></div>
-    <div class="fg">
-      <div><label>Ticker</label><input id="f-ticker" placeholder="Ex: HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
-      <div><label>Tipo</label><select id="f-tipo">
-        <option>Papel</option><option>Logística</option><option>Shopping</option>
-        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
-      </select></div>
-      <div><label>Qtd. cotas</label><input id="f-cotas" type="number" min="0" step="1" placeholder="0"></div>
-      <div><label>Preço médio (R$)</label><input id="f-pmedio" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    <div class="sh">
+      <div class="st">Minha carteira</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="cart-filtro-tipo" onchange="rCart()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);color:var(--text2);cursor:pointer">
+          <option value="">Todos os tipos</option>
+          <option>Papel</option><option>Logística</option><option>Shopping</option>
+          <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+        </select>
+      </div>
     </div>
-    <button class="btn bp" onclick="addFII()">+ Adicionar FII</button>
-  </div>
-  <div class="section">
-    <div class="sh"><div class="st">Minha carteira</div></div>
-    <table><thead><tr><th>Ticker</th><th>Tipo</th><th>Cotas</th><th>P. Médio</th><th>P. Atual</th><th>V. Investido</th><th>V. Atual</th><th>Resultado</th><th>P/VP</th><th>DY</th><th></th></tr></thead>
-    <tbody id="cart-table"></tbody></table>
+    <table>
+      <thead>
+        <tr>
+          <th class="th-sort" onclick="sortCart('ticker')" title="Ordenar">Ticker <span id="sort-ticker"></span></th>
+          <th>Tipo</th>
+          <th class="th-sort" onclick="sortCart('cotas')" title="Ordenar">Cotas <span id="sort-cotas"></span></th>
+          <th class="th-sort" onclick="sortCart('pmedio')" title="Ordenar">P. Médio <span id="sort-pmedio"></span></th>
+          <th class="th-sort" onclick="sortCart('preco')" title="Ordenar">P. Atual <span id="sort-preco"></span></th>
+          <th class="th-sort" onclick="sortCart('vinvest')" title="Ordenar">V. Investido <span id="sort-vinvest"></span></th>
+          <th class="th-sort" onclick="sortCart('vatual')" title="Ordenar">V. Atual <span id="sort-vatual"></span></th>
+          <th class="th-sort" onclick="sortCart('result')" title="Ordenar">Resultado <span id="sort-result"></span></th>
+          <th class="th-sort" onclick="sortCart('pvp')" title="Ordenar">P/VP <span id="sort-pvp"></span></th>
+          <th class="th-sort" onclick="sortCart('dy')" title="Ordenar">DY <span id="sort-dy"></span></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cart-table"></tbody>
+    </table>
   </div>
 </div>
 
@@ -494,9 +509,47 @@ function rDash() {
   document.getElementById("dash-table").innerHTML = rows || `<tr><td colspan="7"><div class="empty">Nenhum FII cadastrado</div></td></tr>`;
 }
 
+let cartSort = {col: null, dir: 1};
+function sortCart(col) {
+  if (cartSort.col === col) cartSort.dir *= -1;
+  else { cartSort.col = col; cartSort.dir = 1; }
+  // Limpa todos os indicadores
+  ['ticker','cotas','pmedio','preco','vinvest','vatual','result','pvp','dy'].forEach(c => {
+    const el = document.getElementById('sort-'+c);
+    if (el) el.textContent = '';
+  });
+  const el = document.getElementById('sort-'+col);
+  if (el) el.textContent = cartSort.dir === 1 ? '▲' : '▼';
+  rCart();
+}
+
 function rCart() {
+  const filtroTipo = document.getElementById('cart-filtro-tipo')?.value || '';
+  let lista = D.fiis.filter(f => !filtroTipo || f.tipo === filtroTipo);
+
+  if (cartSort.col) {
+    lista = [...lista].sort((a, b) => {
+      const pa_ = f => f.preco != null ? f.preco : f.pmedio;
+      const vals = {
+        ticker:  f => f.ticker,
+        cotas:   f => f.cotas,
+        pmedio:  f => f.pmedio,
+        preco:   f => pa_(f),
+        vinvest: f => f.cotas * f.pmedio,
+        vatual:  f => f.cotas * pa_(f),
+        result:  f => f.cotas * (pa_(f) - f.pmedio),
+        pvp:     f => f.pvp ?? -Infinity,
+        dy:      f => f.dy ?? -Infinity,
+      };
+      const fn = vals[cartSort.col];
+      const va = fn(a), vb = fn(b);
+      return va < vb ? -cartSort.dir : va > vb ? cartSort.dir : 0;
+    });
+  }
+
   let rows = "";
-  D.fiis.forEach((f,i) => {
+  lista.forEach((f) => {
+    const i = D.fiis.indexOf(f);
     const p=pa(f), vi=f.cotas*f.pmedio, va=f.cotas*p, r=va-vi, rp=f.pmedio>0?(p-f.pmedio)/f.pmedio:0;
     rows += `<tr>
       <td class="ticker">${f.ticker}</td><td>${f.tipo}</td><td>${f.cotas}</td>

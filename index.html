@@ -15,6 +15,7 @@
   --amber:#e65100;--amber-bg:#fff3e0;
   --blue:#1565c0;--blue-bg:#e3f2fd;
   --accent:#1a56db;--r:10px;--rs:6px;
+  --k-rf:#0d9488;--k-acoes:#7c3aed;--k-cripto:#f7931a;--k-ext:#db2777;
 }
 .dark{
   --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;
@@ -183,7 +184,8 @@ tbody tr:hover{background:var(--surface2)}
 </header>
 
 <nav class="tabs">
-  <button class="tab active" onclick="sw('dashboard',this)">Dashboard</button>
+  <button class="tab active" onclick="sw('kraken',this)">KRAKEN</button>
+  <button class="tab" id="tab-dashboard" onclick="sw('dashboard',this)">Dashboard</button>
   <button class="tab" onclick="sw('carteira',this)">Carteira</button>
   <button class="tab" onclick="sw('alocacao',this)">Alocação</button>
   <button class="tab" onclick="sw('dividendos',this)">Dividendos</button>
@@ -195,7 +197,75 @@ tbody tr:hover{background:var(--surface2)}
 <main class="main">
 
 <!-- DASHBOARD -->
-<div id="page-dashboard" class="page active">
+<div id="page-kraken" class="page active">
+  <div class="section">
+    <div class="sh"><div class="st">Visão geral KRAKEN</div></div>
+    <div style="position:relative">
+      <div id="kr-content" style="display:flex;gap:32px;flex-wrap:wrap;align-items:center;transition:filter .15s">
+        <div style="position:relative;width:180px;height:180px;flex-shrink:0">
+          <svg viewBox="0 0 200 200" width="180" height="180">
+            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--surface2)" stroke-width="26"></circle>
+            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent)" stroke-width="26" stroke-linecap="round" stroke-dasharray="502.65 502.65" transform="rotate(-90 100 100)" style="cursor:pointer" onclick="abrirFiis()"></circle>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-size:12px;color:var(--text3)">FIIs</span>
+            <span style="font-size:20px;font-weight:600;color:var(--text)" id="kr-fii-val">—</span>
+            <span style="font-size:11px;color:var(--text3)">meta 25%</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:220px;flex:1">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="abrirFiis()">
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text);font-weight:500">FIIs</span>
+            <span style="margin-left:auto;font-size:12px;color:var(--text2)" id="kr-fii-legend-val">—</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-rf);opacity:.5;flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text3)">Renda Fixa</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-acoes);opacity:.5;flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text3)">Ações BR</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-cripto);opacity:.5;flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text3)">Cripto</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
+            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-ext);opacity:.5;flex-shrink:0"></span>
+            <span style="font-size:13px;color:var(--text3)">Exterior</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
+          </div>
+        </div>
+      </div>
+      <div id="kr-soon-overlay" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center">
+        <span style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:12px;color:var(--text2)">Módulo ainda não implementado</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sh"><div class="st">Reserva de emergência</div></div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <svg width="44" height="44" viewBox="0 0 48 48">
+        <rect x="6" y="10" width="36" height="32" rx="4" fill="none" stroke="var(--text3)" stroke-width="2.5"></rect>
+        <circle cx="24" cy="26" r="8" fill="none" stroke="var(--text3)" stroke-width="2.5"></circle>
+        <line x1="24" y1="26" x2="24" y2="21" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"></line>
+        <circle cx="17" cy="10" r="3" fill="var(--red)"></circle>
+        <circle cx="27" cy="10" r="3" fill="var(--accent)"></circle>
+      </svg>
+      <div>
+        <div class="sc-value" id="kr-reserva-val">—</div>
+        <div class="sc-sub" id="kr-reserva-pct">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-dashboard" class="page">
   <div id="alertas-box"></div>
 
   <!-- APORTE RÁPIDO -->
@@ -624,7 +694,22 @@ function checkAlertas(){
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function render(){rDash();rCart();rAloc();rDivid();rMov();rReserva();rEstudo();checkAlertas();}
+function render(){rKraken();rDash();rCart();rAloc();rDivid();rMov();rReserva();rEstudo();checkAlertas();}
+
+function rKraken(){
+  const{tm}=totais();
+  document.getElementById("kr-fii-val").textContent=fmt(tm);
+  document.getElementById("kr-fii-legend-val").textContent=fmt(tm);
+  const rv=D.reserva;
+  document.getElementById("kr-reserva-val").textContent=fmt(rv.atual);
+  document.getElementById("kr-reserva-pct").textContent=fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta de "+fmt(rv.meta);
+}
+function abrirFiis(){document.getElementById('tab-dashboard').click();}
+function kraSoon(){
+  const c=document.getElementById('kr-content'),o=document.getElementById('kr-soon-overlay');
+  c.style.filter='blur(3px)';o.style.display='flex';
+  setTimeout(()=>{c.style.filter='none';o.style.display='none';},1400);
+}
 
 function rDash(){
   const{tm,tc}=totais();

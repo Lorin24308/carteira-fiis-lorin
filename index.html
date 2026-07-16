@@ -19,10 +19,10 @@
 }
 .kr-tip{opacity:0;transition:opacity .15s;pointer-events:none}
 .kr-leg:hover .kr-tip{opacity:1}
-#kr-donut-wrap.kr-hover .kr-stem{transform:scaleY(1)}
-#kr-donut-wrap.kr-hover .kr-stem-txt{opacity:1}
-.kr-stem{transform:scaleY(0);transform-origin:bottom;transition:transform .28s ease}
-.kr-stem-txt{opacity:0;transition:opacity .18s ease .12s}
+.kr-lead{stroke-dasharray:36;stroke-dashoffset:36;transition:stroke-dashoffset .3s ease}
+#kr-donut-wrap.kr-hover .kr-lead{stroke-dashoffset:0}
+.kr-lead-txt{opacity:0;transition:opacity .2s ease .18s}
+#kr-donut-wrap.kr-hover .kr-lead-txt{opacity:1}
 .dark{
   --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;
   --border:#2a2a2a;--border2:#383838;
@@ -187,10 +187,12 @@ tbody tr:hover{background:var(--surface2)}
     <div id="kr-donut-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px">
       <svg viewBox="0 0 200 200" width="240" height="240" style="overflow:visible">
         <circle class="kr-arc" cx="100" cy="100" r="92" fill="none" stroke="var(--accent)" stroke-width="9" pointer-events="visibleStroke" style="cursor:pointer" onclick="abrirFiis()"></circle>
+        <line class="kr-lead" x1="35" y1="35" x2="8" y2="8" stroke="var(--border2)" stroke-width="1"></line>
       </svg>
-      <div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none">
-        <span class="kr-stem" style="width:1px;height:20px;background:var(--border2)"></span>
-        <span class="kr-stem-txt" style="font-size:11px;color:var(--text2);white-space:nowrap;margin-top:4px" id="kr-fii-val">—</span>
+      <div class="kr-lead-txt" style="position:absolute;top:9px;left:9px;transform:translate(-100%,-100%);text-align:right;pointer-events:none">
+        <div style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-fii-val">—</div>
+        <div style="height:1px;background:var(--border2);margin:3px 0"></div>
+        <div style="font-size:11px;color:var(--text3);white-space:nowrap" id="kr-fii-pct">—</div>
       </div>
     </div>
 
@@ -717,6 +719,7 @@ function render(){rKraken();rDash();rCart();rAloc();rDivid();rMov();rReserva();r
 function rKraken(){
   const{tm}=totais();
   document.getElementById("kr-fii-val").textContent="FIIs · "+fmt(tm);
+  document.getElementById("kr-fii-pct").textContent="100%";
   document.getElementById("kr-fii-legend-val").textContent=fmt(tm);
   const rv=D.reserva;
   document.getElementById("kr-reserva-pct").textContent=fmt(rv.atual)+" · "+fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta";

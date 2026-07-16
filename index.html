@@ -21,6 +21,8 @@
 .kr-leg:hover .kr-tip{opacity:1}
 #kr-donut-wrap.kr-hover .kr-stem{transform:scaleY(1)}
 #kr-donut-wrap.kr-hover .kr-stem-txt{opacity:1}
+.kr-stem{transform:scaleY(0);transform-origin:bottom;transition:transform .28s ease}
+.kr-stem-txt{opacity:0;transition:opacity .18s ease .12s}
 .dark{
   --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;
   --border:#2a2a2a;--border2:#383838;
@@ -179,15 +181,16 @@ tbody tr:hover{background:var(--surface2)}
     <button class="btn-sm" onclick="toggleDark()" id="dark-btn-lobby">🌙</button>
     <button class="btn-sm" onclick="doLogout()">Sair</button>
   </div>
-  <div id="kr-stage" style="position:relative;min-height:100vh;padding:24px;transition:filter .15s">
+  <div id="kr-stage" style="position:relative;min-height:100vh;padding:24px">
+    <div id="kr-blur-target" style="transition:filter .15s">
 
     <div id="kr-donut-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px">
       <svg viewBox="0 0 200 200" width="240" height="240" style="overflow:visible">
         <circle class="kr-arc" cx="100" cy="100" r="92" fill="none" stroke="var(--accent)" stroke-width="9" pointer-events="visibleStroke" style="cursor:pointer" onclick="abrirFiis()"></circle>
       </svg>
       <div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none">
-        <span class="kr-stem" style="width:1px;height:20px;background:var(--border2);transform:scaleY(0);transform-origin:bottom;transition:transform .28s ease"></span>
-        <span class="kr-stem-txt" style="font-size:11px;color:var(--text2);white-space:nowrap;margin-top:4px;opacity:0;transition:opacity .18s ease .12s" id="kr-fii-val">—</span>
+        <span class="kr-stem" style="width:1px;height:20px;background:var(--border2)"></span>
+        <span class="kr-stem-txt" style="font-size:11px;color:var(--text2);white-space:nowrap;margin-top:4px" id="kr-fii-val">—</span>
       </div>
     </div>
 
@@ -229,6 +232,8 @@ tbody tr:hover{background:var(--surface2)}
         <span style="width:1px;height:14px;background:var(--border2)"></span>
         <span style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-reserva-pct">—</span>
       </div>
+    </div>
+
     </div>
 
     <div id="kr-soon-overlay" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center">
@@ -717,7 +722,7 @@ function rKraken(){
   document.getElementById("kr-reserva-pct").textContent=fmt(rv.atual)+" · "+fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta";
 }
 function kraSoon(){
-  const c=document.getElementById('kr-stage'),o=document.getElementById('kr-soon-overlay');
+  const c=document.getElementById('kr-blur-target'),o=document.getElementById('kr-soon-overlay');
   c.style.filter='blur(3px)';o.style.display='flex';
   setTimeout(()=>{c.style.filter='none';o.style.display='none';},1400);
 }

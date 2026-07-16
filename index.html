@@ -17,6 +17,10 @@
   --accent:#1a56db;--r:10px;--rs:6px;
   --k-rf:#0d9488;--k-acoes:#7c3aed;--k-cripto:#f7931a;--k-ext:#db2777;
 }
+.kr-tip{opacity:0;transition:opacity .15s;pointer-events:none}
+.kr-leg:hover .kr-tip{opacity:1}
+#kr-donut-wrap.kr-hover .kr-stem{transform:scaleY(1)}
+#kr-donut-wrap.kr-hover .kr-stem-txt{opacity:1}
 .dark{
   --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;
   --border:#2a2a2a;--border2:#383838;
@@ -169,11 +173,76 @@ tbody tr:hover{background:var(--surface2)}
   </div>
 </div>
 
+<!-- LOBBY (tela inicial — visão KRAKEN, fora da estrutura de abas) -->
+<div id="lobby-wrap" style="display:none">
+  <div style="position:fixed;top:16px;right:16px;display:flex;gap:8px;z-index:10">
+    <button class="btn-sm" onclick="toggleDark()" id="dark-btn-lobby">🌙</button>
+    <button class="btn-sm" onclick="doLogout()">Sair</button>
+  </div>
+  <div id="kr-stage" style="position:relative;min-height:100vh;padding:24px;transition:filter .15s">
+
+    <div id="kr-donut-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px">
+      <svg viewBox="0 0 200 200" width="240" height="240" style="overflow:visible">
+        <circle class="kr-arc" cx="100" cy="100" r="92" fill="none" stroke="var(--accent)" stroke-width="9" pointer-events="visibleStroke" style="cursor:pointer" onclick="abrirFiis()"></circle>
+      </svg>
+      <div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none">
+        <span class="kr-stem" style="width:1px;height:20px;background:var(--border2);transform:scaleY(0);transform-origin:bottom;transition:transform .28s ease"></span>
+        <span class="kr-stem-txt" style="font-size:11px;color:var(--text2);white-space:nowrap;margin-top:4px;opacity:0;transition:opacity .18s ease .12s" id="kr-fii-val">—</span>
+      </div>
+    </div>
+
+    <div style="position:absolute;bottom:6%;right:5%;display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+      <div class="kr-leg" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="abrirFiis()">
+        <div class="kr-tip" style="position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-fii-legend-val">—</span>
+          <span style="width:16px;height:1px;background:var(--border2)"></span>
+        </div>
+        <span style="font-size:13px;color:var(--text)">FIIs</span>
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
+      </div>
+      <div class="kr-leg" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="kraSoon()">
+        <span style="font-size:13px;color:var(--text3)">Renda Fixa</span>
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--k-rf);opacity:.4;flex-shrink:0"></span>
+      </div>
+      <div class="kr-leg" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="kraSoon()">
+        <span style="font-size:13px;color:var(--text3)">Ações BR</span>
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--k-acoes);opacity:.4;flex-shrink:0"></span>
+      </div>
+      <div class="kr-leg" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="kraSoon()">
+        <span style="font-size:13px;color:var(--text3)">Cripto</span>
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--k-cripto);opacity:.4;flex-shrink:0"></span>
+      </div>
+      <div class="kr-leg" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="kraSoon()">
+        <span style="font-size:13px;color:var(--text3)">Exterior</span>
+        <span style="width:9px;height:9px;border-radius:50%;background:var(--k-ext);opacity:.4;flex-shrink:0"></span>
+      </div>
+    </div>
+
+    <div class="kr-leg" style="position:absolute;bottom:6%;left:5%;display:flex;align-items:center;gap:10px;cursor:default">
+      <svg width="34" height="34" viewBox="0 0 48 48">
+        <rect x="6" y="10" width="36" height="32" rx="4" fill="none" stroke="var(--text3)" stroke-width="2.5"></rect>
+        <circle cx="24" cy="26" r="8" fill="none" stroke="var(--text3)" stroke-width="2.5"></circle>
+        <line x1="24" y1="26" x2="24" y2="21" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"></line>
+      </svg>
+      <span style="font-size:13px;color:var(--text2)">Reserva</span>
+      <div class="kr-tip" style="position:absolute;left:0;bottom:calc(100% + 8px);display:flex;align-items:center;gap:6px">
+        <span style="width:1px;height:14px;background:var(--border2)"></span>
+        <span style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-reserva-pct">—</span>
+      </div>
+    </div>
+
+    <div id="kr-soon-overlay" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center">
+      <span style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:12px;color:var(--text2)">Módulo ainda não implementado</span>
+    </div>
+
+  </div>
+</div>
+
 <!-- APP (oculto até login) -->
 <div id="app-wrap" style="display:none">
 
 <header class="header">
-  <div class="header-logo">Carteira <span>FIIs</span></div>
+  <div class="header-logo" style="cursor:pointer" onclick="voltarLobby()" title="Voltar ao início">Carteira <span>FIIs</span></div>
   <div class="header-right">
     <span class="sync-dot" id="sync-dot"></span>
     <span class="upd" id="upd">Conectando...</span>
@@ -184,8 +253,7 @@ tbody tr:hover{background:var(--surface2)}
 </header>
 
 <nav class="tabs">
-  <button class="tab active" onclick="sw('kraken',this)">KRAKEN</button>
-  <button class="tab" id="tab-dashboard" onclick="sw('dashboard',this)">Dashboard</button>
+  <button class="tab active" id="tab-dashboard" onclick="sw('dashboard',this)">Dashboard</button>
   <button class="tab" onclick="sw('carteira',this)">Carteira</button>
   <button class="tab" onclick="sw('alocacao',this)">Alocação</button>
   <button class="tab" onclick="sw('dividendos',this)">Dividendos</button>
@@ -197,75 +265,7 @@ tbody tr:hover{background:var(--surface2)}
 <main class="main">
 
 <!-- DASHBOARD -->
-<div id="page-kraken" class="page active">
-  <div class="section">
-    <div class="sh"><div class="st">Visão geral KRAKEN</div></div>
-    <div style="position:relative">
-      <div id="kr-content" style="display:flex;gap:32px;flex-wrap:wrap;align-items:center;transition:filter .15s">
-        <div style="position:relative;width:180px;height:180px;flex-shrink:0">
-          <svg viewBox="0 0 200 200" width="180" height="180">
-            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--surface2)" stroke-width="26"></circle>
-            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--accent)" stroke-width="26" stroke-linecap="round" stroke-dasharray="502.65 502.65" transform="rotate(-90 100 100)" style="cursor:pointer" onclick="abrirFiis()"></circle>
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <span style="font-size:12px;color:var(--text3)">FIIs</span>
-            <span style="font-size:20px;font-weight:600;color:var(--text)" id="kr-fii-val">—</span>
-            <span style="font-size:11px;color:var(--text3)">meta 25%</span>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;min-width:220px;flex:1">
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="abrirFiis()">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
-            <span style="font-size:13px;color:var(--text);font-weight:500">FIIs</span>
-            <span style="margin-left:auto;font-size:12px;color:var(--text2)" id="kr-fii-legend-val">—</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-rf);opacity:.5;flex-shrink:0"></span>
-            <span style="font-size:13px;color:var(--text3)">Renda Fixa</span>
-            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-acoes);opacity:.5;flex-shrink:0"></span>
-            <span style="font-size:13px;color:var(--text3)">Ações BR</span>
-            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-cripto);opacity:.5;flex-shrink:0"></span>
-            <span style="font-size:13px;color:var(--text3)">Cripto</span>
-            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--rs);cursor:pointer" onclick="kraSoon()">
-            <span style="width:12px;height:12px;border-radius:50%;background:var(--k-ext);opacity:.5;flex-shrink:0"></span>
-            <span style="font-size:13px;color:var(--text3)">Exterior</span>
-            <span style="margin-left:auto;font-size:11px;color:var(--text3)">em breve</span>
-          </div>
-        </div>
-      </div>
-      <div id="kr-soon-overlay" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center">
-        <span style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 16px;font-size:12px;color:var(--text2)">Módulo ainda não implementado</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sh"><div class="st">Reserva de emergência</div></div>
-    <div style="display:flex;align-items:center;gap:16px">
-      <svg width="44" height="44" viewBox="0 0 48 48">
-        <rect x="6" y="10" width="36" height="32" rx="4" fill="none" stroke="var(--text3)" stroke-width="2.5"></rect>
-        <circle cx="24" cy="26" r="8" fill="none" stroke="var(--text3)" stroke-width="2.5"></circle>
-        <line x1="24" y1="26" x2="24" y2="21" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"></line>
-        <circle cx="17" cy="10" r="3" fill="var(--red)"></circle>
-        <circle cx="27" cy="10" r="3" fill="var(--accent)"></circle>
-      </svg>
-      <div>
-        <div class="sc-value" id="kr-reserva-val">—</div>
-        <div class="sc-sub" id="kr-reserva-pct">—</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="page-dashboard" class="page">
+<div id="page-dashboard" class="page active">
   <div id="alertas-box"></div>
 
   <!-- APORTE RÁPIDO -->
@@ -526,7 +526,7 @@ function doLogin() {
   if (u === CREDS.user && p === CREDS.pass) {
     sessionStorage.setItem('fii_auth','1');
     document.getElementById('login-wrap').style.display = 'none';
-    document.getElementById('app-wrap').style.display = 'block';
+    document.getElementById('lobby-wrap').style.display = 'block';
     init();
   } else {
     document.getElementById('l-err').style.display = 'block';
@@ -539,18 +539,31 @@ function doLogout() {
 // Verifica sessão ao carregar
 if (sessionStorage.getItem('fii_auth') === '1') {
   document.getElementById('login-wrap').style.display = 'none';
-  document.getElementById('app-wrap').style.display = 'block';
+  document.getElementById('lobby-wrap').style.display = 'block';
+}
+// Vai do lobby pro app (aba Dashboard) e volta
+function abrirFiis(){
+  document.getElementById('lobby-wrap').style.display='none';
+  document.getElementById('app-wrap').style.display='block';
+  document.getElementById('tab-dashboard').click();
+}
+function voltarLobby(){
+  document.getElementById('app-wrap').style.display='none';
+  document.getElementById('lobby-wrap').style.display='block';
 }
 
 // ── TEMA ─────────────────────────────────────────────────────────────────
 function toggleDark() {
   const dark = document.body.classList.toggle('dark');
-  document.getElementById('dark-btn').textContent = dark ? '☀️' : '🌙';
+  const icon = dark ? '☀️' : '🌙';
+  document.getElementById('dark-btn').textContent = icon;
+  const lb = document.getElementById('dark-btn-lobby'); if (lb) lb.textContent = icon;
   localStorage.setItem('fii_dark', dark ? '1' : '0');
 }
 if (localStorage.getItem('fii_dark') === '1') {
   document.body.classList.add('dark');
   document.getElementById('dark-btn').textContent = '☀️';
+  const lb0 = document.getElementById('dark-btn-lobby'); if (lb0) lb0.textContent = '☀️';
 }
 
 // ── UTILS ────────────────────────────────────────────────────────────────
@@ -698,18 +711,21 @@ function render(){rKraken();rDash();rCart();rAloc();rDivid();rMov();rReserva();r
 
 function rKraken(){
   const{tm}=totais();
-  document.getElementById("kr-fii-val").textContent=fmt(tm);
+  document.getElementById("kr-fii-val").textContent="FIIs · "+fmt(tm);
   document.getElementById("kr-fii-legend-val").textContent=fmt(tm);
   const rv=D.reserva;
-  document.getElementById("kr-reserva-val").textContent=fmt(rv.atual);
-  document.getElementById("kr-reserva-pct").textContent=fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta de "+fmt(rv.meta);
+  document.getElementById("kr-reserva-pct").textContent=fmt(rv.atual)+" · "+fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta";
 }
-function abrirFiis(){document.getElementById('tab-dashboard').click();}
 function kraSoon(){
-  const c=document.getElementById('kr-content'),o=document.getElementById('kr-soon-overlay');
+  const c=document.getElementById('kr-stage'),o=document.getElementById('kr-soon-overlay');
   c.style.filter='blur(3px)';o.style.display='flex';
   setTimeout(()=>{c.style.filter='none';o.style.display='none';},1400);
 }
+document.querySelectorAll('.kr-arc').forEach(arc=>{
+  const wrap=document.getElementById('kr-donut-wrap');
+  arc.addEventListener('mouseenter',()=>wrap.classList.add('kr-hover'));
+  arc.addEventListener('mouseleave',()=>wrap.classList.remove('kr-hover'));
+});
 
 function rDash(){
   const{tm,tc}=totais();

@@ -320,13 +320,20 @@ tbody tr:hover{background:var(--surface2)}
 
   <div class="section">
     <div class="sh"><div class="st">Posições</div></div>
-    <table><thead><tr><th>Ticker</th><th>Tipo</th><th>Cotas</th><th>P. Atual</th><th>Valor</th><th>Resultado</th><th>P/VP</th><th>% Cart.</th></tr></thead>
+    <table><thead><tr><th>Ticker</th><th>Tipo</th><th>Cotas</th><th>P. Atual</th><th>Valor</th><th>P/VP</th><th>Resultado</th><th>% Cart.</th></tr></thead>
     <tbody id="dash-table"></tbody></table>
   </div>
 
   <div class="section">
-    <div class="sh"><div class="st">Dividendos por mês</div></div>
-    <canvas id="divid-chart" height="80"></canvas>
+    <div class="sh">
+      <div class="st">Dividendos por mês</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-sm" onclick="mudaAnoDivid(-1)">◀</button>
+        <span id="divid-chart-ano" style="font-size:13px;font-weight:500;color:var(--text2)"></span>
+        <button class="btn-sm" onclick="mudaAnoDivid(1)">▶</button>
+      </div>
+    </div>
+    <canvas id="divid-chart" height="130"></canvas>
     <div id="divid-chart-empty" class="empty" style="display:none">Nenhum dividendo registrado ainda</div>
   </div>
 </div>
@@ -645,8 +652,15 @@ async function fetchPrices(){
       if(d.results&&d.results[0]){
         const q=d.results[0];
         if(q.regularMarketPrice)f.preco=q.regularMarketPrice;
-        if(q.priceToBook!=null)f.pvp=q.priceToBook;
-        if(q.dividendYield!=null)f.dy=q.dividendYield;
+        // P/VP: tenta priceToBook, depois bookValue calculado manualmente
+        if(q.priceToBook!=null&&q.priceToBook>0){
+          f.pvp=q.priceToBook;
+        }else if(q.regularMarketPrice&&q.bookValue&&q.bookValue>0){
+          f.pvp=q.regularMarketPrice/q.bookValue;
+        }
+        // DY: brapi retorna como decimal (ex: 0.12 = 12%)
+        if(q.dividendYield!=null&&q.dividendYield>0)f.dy=q.dividendYield/100;
+        else if(q.dividendYield!=null)f.dy=q.dividendYield;
         if(q.shortName)f.nome=q.shortName;
       }
     }catch(e){if(f.preco==null)f.preco=f.pmedio;}
@@ -901,37 +915,71 @@ function drawEvolucao(){
 }
 
 // ── GRÁFICO DIVIDENDOS ───────────────────────────────────────────────────
+let dividChartAno = new Date().getFullYear();
+
+function mudaAnoDivid(delta){
+  dividChartAno += delta;
+  drawDividChart();
+}
+
 function drawDividChart(){
   const canvas=document.getElementById('divid-chart');
   const empty=document.getElementById('divid-chart-empty');
+  const anoEl=document.getElementById('divid-chart-ano');
   if(!canvas)return;
-  if(!D.dividendos.length){canvas.style.display='none';empty.style.display='block';return;}
-  canvas.style.display='block';empty.style.display='none';
-  // Agrupa por mês
-  const meses={};
-  D.dividendos.forEach(d=>{
-    const mes=d.mes_ref||d.data.slice(0,7);
-    meses[mes]=(meses[mes]||0)+d.valor;
+  if(anoEl)anoEl.textContent=dividChartAno;
+
+  // Monta os 12 meses fixos do ano
+  const MESES_LABEL=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const dados=Array.from({length:12},(_,i)=>{
+    const mes=`${dividChartAno}-${String(i+1).padStart(2,'0')}`;
+    const total=D.dividendos.filter(d=>(d.mes_ref||d.data.slice(0,7))===mes).reduce((a,d)=>a+d.valor,0);
+    return{mes:MESES_LABEL[i],valor:total};
   });
-  const sorted=Object.entries(meses).sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);
-  const W=canvas.parentElement.offsetWidth||400,H=120;
+
+  const temDados=dados.some(d=>d.valor>0);
+  if(!temDados&&D.dividendos.length===0){
+    canvas.style.display='none';
+    empty.style.display='block';
+    return;
+  }
+  canvas.style.display='block';
+  empty.style.display='none';
+
+  const W=canvas.parentElement.offsetWidth||400,H=130;
   canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
-  const max=Math.max(...sorted.map(([,v])=>v))||1;
-  const pad=24,bw=Math.max(8,(W-pad*2)/sorted.length*0.6);
-  sorted.forEach(([mes,val],i)=>{
-    const x=pad+(W-pad*2)*i/(sorted.length-1||1);
-    const bh=(val/max)*(H-pad*2);
-    const y=H-pad-bh;
-    ctx.fillStyle='#1a56db';
-    ctx.beginPath();ctx.roundRect?ctx.roundRect(x-bw/2,y,bw,bh,3):ctx.rect(x-bw/2,y,bw,bh);
+
+  const max=Math.max(...dados.map(d=>d.valor),1);
+  const padL=8,padR=8,padT=20,padB=24;
+  const bw=Math.floor((W-padL-padR)/12*0.5);
+  const slotW=(W-padL-padR)/12;
+
+  dados.forEach((d,i)=>{
+    const cx=padL+slotW*i+slotW/2;
+    const bh=d.valor>0?(d.valor/max)*(H-padT-padB):0;
+    const y=H-padB-bh;
+
+    // Barra (cinza se zero, azul se tem valor)
+    ctx.fillStyle=d.valor>0?'#1a56db':'rgba(128,128,128,0.15)';
+    const minH=d.valor>0?3:H-padT-padB;
+    const barY=d.valor>0?y:padT;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(cx-bw/2,barY,bw,d.valor>0?bh:minH,3);
+    else ctx.rect(cx-bw/2,barY,bw,d.valor>0?bh:minH);
     ctx.fill();
+
+    // Label do mês
     ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text3')||'#9e9c95';
-    ctx.font='10px sans-serif';ctx.textAlign='center';
-    ctx.fillText(mes.slice(5),x,H-4);
-    ctx.fillStyle='#1565c0';ctx.font='bold 10px sans-serif';
-    ctx.fillText('R$'+val.toFixed(0),x,y-3);
+    ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(d.mes,cx,H-6);
+
+    // Valor acima da barra
+    if(d.valor>0){
+      ctx.fillStyle='#1a56db';ctx.font='bold 9px sans-serif';
+      ctx.fillText('R$'+d.valor.toFixed(0),cx,y-3);
+    }
   });
 }
 

@@ -287,7 +287,8 @@ tbody tr:hover{background:var(--surface2)}
   <div class="sg">
     <div class="sc"><div class="sc-label">Patrimônio</div><div class="sc-value" id="d-total">—</div><div class="sc-sub">valor de mercado</div></div>
     <div class="sc"><div class="sc-label">Custo total</div><div class="sc-value" id="d-custo">—</div><div class="sc-sub">valor investido</div></div>
-    <div class="sc"><div class="sc-label">Resultado</div><div class="sc-value" id="d-result">—</div><div class="sc-sub" id="d-rpct">—</div></div>
+    <div class="sc"><div class="sc-label">Valorização</div><div class="sc-value" id="d-result">—</div><div class="sc-sub" id="d-rpct">—</div></div>
+    <div class="sc"><div class="sc-label">Retorno Total</div><div class="sc-value" id="d-rtotal">—</div><div class="sc-sub" id="d-rtotal-pct">—</div></div>
     <div class="sc"><div class="sc-label">DY médio</div><div class="sc-value" id="d-dy">—</div><div class="sc-sub">carteira ponderada</div></div>
     <div class="sc"><div class="sc-label">Dividendos</div><div class="sc-value" id="d-divid">R$ 0,00</div><div class="sc-sub">acumulados</div></div>
     <div class="sc"><div class="sc-label">Reserva</div><div class="sc-value" id="d-res">—</div><div class="sc-sub" id="d-res-pct">—</div></div>
@@ -351,7 +352,8 @@ tbody tr:hover{background:var(--surface2)}
       <th class="th-sort" onclick="sortCart('pteto')">P. Teto <span id="sort-pteto"></span></th>
       <th class="th-sort" onclick="sortCart('vinvest')">V. Investido <span id="sort-vinvest"></span></th>
       <th class="th-sort" onclick="sortCart('vatual')">V. Atual <span id="sort-vatual"></span></th>
-      <th class="th-sort" onclick="sortCart('result')">Resultado <span id="sort-result"></span></th>
+      <th class="th-sort" onclick="sortCart('result')">Valorização <span id="sort-result"></span></th>
+      <th class="th-sort" onclick="sortCart('rtotal')">Retorno Total <span id="sort-rtotal"></span></th>
       <th class="th-sort" onclick="sortCart('pvp')">P/VP <span id="sort-pvp"></span></th>
       <th class="th-sort" onclick="sortCart('dy')">DY <span id="sort-dy"></span></th>
       <th></th>
@@ -701,6 +703,18 @@ function dyMedio(){
   D.fiis.forEach(f=>{if(f.dy!=null){const peso=(f.cotas*pa(f))/tm;dyPond+=f.dy*peso;}});
   return dyPond>0?dyPond:null;
 }
+// Retorno Total = valorização (preço) + dividendos recebidos, sobre o valor investido.
+// Reflete melhor a estratégia de Geração de Dividendos do que só a oscilação de preço.
+function dividendosPorTicker(ticker){
+  return D.dividendos.filter(d=>d.ticker===ticker).reduce((s,d)=>s+d.valor,0);
+}
+function retornoTotalFII(f){
+  const p=pa(f),investido=f.cotas*f.pmedio;
+  const valorizacao=f.cotas*(p-f.pmedio);
+  const divs=dividendosPorTicker(f.ticker);
+  const rt=valorizacao+divs;
+  return{rt,rtPct:investido>0?rt/investido:0,valorizacao,divs};
+}
 
 // ── ALERTAS ───────────────────────────────────────────────────────────────
 function checkAlertas(){
@@ -763,6 +777,10 @@ function rDash(){
   document.getElementById("d-rpct").textContent=(res>=0?"+":"")+fmtP(pct)+" desde o custo";
   const td=D.dividendos.reduce((a,d)=>a+d.valor,0);
   document.getElementById("d-divid").textContent=fmt(td);
+  const rt=res+td,rtPct=tc>0?rt/tc:0;
+  const ert=document.getElementById("d-rtotal");
+  ert.textContent=fmt(rt);ert.className="sc-value "+(rt>=0?"pos":"neg");
+  document.getElementById("d-rtotal-pct").textContent=(rtPct>=0?"+":"")+fmtP(rtPct)+" sobre investido";
   const rv=D.reserva,pct2=rv.meta>0?rv.atual/rv.meta:0;
   document.getElementById("d-res").textContent=fmt(rv.atual);
   document.getElementById("d-res-pct").textContent=fmtP(pct2)+" da meta";
@@ -921,7 +939,7 @@ function drawDividChart(){
 function sortCart(col){
   if(cartSort.col===col)cartSort.dir*=-1;
   else{cartSort.col=col;cartSort.dir=1;}
-  ['ticker','cotas','pmedio','preco','pteto','vinvest','vatual','result','pvp','dy'].forEach(c=>{
+  ['ticker','cotas','pmedio','preco','pteto','vinvest','vatual','result','rtotal','pvp','dy'].forEach(c=>{
     const el=document.getElementById('sort-'+c);if(el)el.textContent='';
   });
   const el=document.getElementById('sort-'+col);
@@ -943,6 +961,7 @@ function rCart(){
       else if(cartSort.col==='vinvest'){va=a.cotas*a.pmedio;vb=b.cotas*b.pmedio;}
       else if(cartSort.col==='vatual'){va=a.cotas*pa(a);vb=b.cotas*pa(b);}
       else if(cartSort.col==='result'){va=a.cotas*(pa(a)-a.pmedio);vb=b.cotas*(pa(b)-b.pmedio);}
+      else if(cartSort.col==='rtotal'){va=retornoTotalFII(a).rt;vb=retornoTotalFII(b).rt;}
       else if(cartSort.col==='pvp'){va=a.pvp??-999;vb=b.pvp??-999;}
       else if(cartSort.col==='dy'){va=a.dy??-999;vb=b.dy??-999;}
       return cartSort.dir*(va-vb);
@@ -951,6 +970,7 @@ function rCart(){
   let rows="";
   fiis.forEach(f=>{
     const p=pa(f),vi=f.cotas*f.pmedio,va2=f.cotas*p,r=va2-vi,rp=f.pmedio>0?(p-f.pmedio)/f.pmedio:0;
+    const{rt,rtPct}=retornoTotalFII(f);
     const pvpCls=f.pvp!=null?(f.pvp<0.90?'pvp-ok':f.pvp<1.0?'pvp-warn':'pvp-bad'):'';
     const tetoOk=f.pteto&&p<=f.pteto;
     const tetoTxt=f.pteto?`<span style="color:${tetoOk?'var(--green)':'var(--text3)'}">${fmt(f.pteto)}${tetoOk?' ✓':''}</span>`:`<span style="color:var(--text3)">—</span>`;
@@ -961,6 +981,7 @@ function rCart(){
       <td>${tetoTxt}</td>
       <td>${fmt(vi)}</td><td>${fmt(va2)}</td>
       <td class="${r>=0?'pos':'neg'}">${r>=0?"+":""}${fmt(r)} (${(rp*100).toFixed(1)}%)</td>
+      <td class="${rt>=0?'pos':'neg'}">${rt>=0?"+":""}${fmt(rt)} (${(rtPct*100).toFixed(1)}%)</td>
       <td class="${pvpCls}">${f.pvp!=null?f.pvp.toFixed(2):"—"}</td>
       <td>${f.dy!=null?(f.dy*100).toFixed(2)+"%":"—"}</td>
       <td style="display:flex;gap:4px">
@@ -969,7 +990,7 @@ function rCart(){
       </td>
     </tr>`;
   });
-  document.getElementById("cart-table").innerHTML=rows||`<tr><td colspan="12"><div class="empty">Nenhum FII cadastrado</div></td></tr>`;
+  document.getElementById("cart-table").innerHTML=rows||`<tr><td colspan="13"><div class="empty">Nenhum FII cadastrado</div></td></tr>`;
 }
 
 function openEdit(i){

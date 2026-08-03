@@ -120,9 +120,21 @@ tbody tr:hover{background:var(--surface2)}
 .sim-tipo{font-weight:500;font-size:13px}
 .sim-val{font-size:14px;font-weight:600;color:var(--accent)}
 .sim-pct{font-size:11px;color:var(--text3)}
-/* RESERVA */
-.res-bar-bg{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin:8px 0 4px}
-.res-bar-fill{height:10px;border-radius:5px;background:var(--accent);transition:width .4s}
+/* COFRINHOS */
+.cof-item{border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:10px}
+.cof-item:last-child{margin-bottom:0}
+.cof-item-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.cof-item-name{font-size:13px;font-weight:500}
+.cof-item-val{font-size:12px;color:var(--text2);margin-top:1px}
+.cof-item-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:9px}
+.cof-item-fill{height:100%;border-radius:3px;transition:width .3s}
+.cof-item-pct{font-size:11px;color:var(--text3);margin-top:4px}
+.cof-edit-icon{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:var(--rs)}
+.cof-edit-icon:hover{background:var(--surface2);color:var(--accent)}
+.cof-edit-row{display:none;gap:6px;margin-top:10px}
+.cof-edit-row.open{display:flex}
+.cof-edit-row input{flex:1;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);color:var(--text);outline:none}
+.cof-edit-row input:focus{border-color:var(--accent)}
 /* PIZZA */
 .pizza-wrap{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
 .pizza-legend{display:flex;flex-direction:column;gap:8px;min-width:160px}
@@ -224,17 +236,14 @@ tbody tr:hover{background:var(--surface2)}
       </div>
     </div>
 
-    <div class="kr-leg" style="position:absolute;bottom:6%;left:5%;display:flex;align-items:center;gap:10px;cursor:default">
+    <div class="kr-leg" style="position:absolute;bottom:6%;left:5%;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openCofModal()">
       <svg width="34" height="34" viewBox="0 0 48 48">
         <rect x="6" y="10" width="36" height="32" rx="4" fill="none" stroke="var(--text3)" stroke-width="2.5"></rect>
         <circle cx="24" cy="26" r="8" fill="none" stroke="var(--text3)" stroke-width="2.5"></circle>
         <line x1="24" y1="26" x2="24" y2="21" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"></line>
       </svg>
-      <span style="font-size:13px;color:var(--text2)">Reserva</span>
-      <div class="kr-tip" style="position:absolute;left:0;bottom:calc(100% + 8px);display:flex;align-items:center;gap:6px">
-        <span style="width:1px;height:14px;background:var(--border2)"></span>
-        <span style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-reserva-pct">—</span>
-      </div>
+      <span style="font-size:13px;color:var(--text2)">Cofrinhos</span>
+      <div class="kr-tip" id="kr-cof-tip" style="position:absolute;left:0;bottom:calc(100% + 8px);background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;box-shadow:0 4px 12px rgba(0,0,0,.12)"></div>
     </div>
 
     </div>
@@ -266,7 +275,6 @@ tbody tr:hover{background:var(--surface2)}
   <button class="tab" onclick="sw('alocacao',this)">Alocação</button>
   <button class="tab" onclick="sw('dividendos',this)">Dividendos</button>
   <button class="tab" onclick="sw('movimentos',this)">Movimentos</button>
-  <button class="tab" onclick="sw('reserva',this)">Reserva</button>
   <button class="tab" onclick="sw('estudo',this)">Estudo</button>
 </nav>
 
@@ -291,7 +299,6 @@ tbody tr:hover{background:var(--surface2)}
     <div class="sc"><div class="sc-label">Retorno Total</div><div class="sc-value" id="d-rtotal">—</div><div class="sc-sub" id="d-rtotal-pct">—</div></div>
     <div class="sc"><div class="sc-label">DY médio</div><div class="sc-value" id="d-dy">—</div><div class="sc-sub">carteira ponderada</div></div>
     <div class="sc"><div class="sc-label">Dividendos</div><div class="sc-value" id="d-divid">R$ 0,00</div><div class="sc-sub">acumulados</div></div>
-    <div class="sc"><div class="sc-label">Reserva</div><div class="sc-value" id="d-res">—</div><div class="sc-sub" id="d-res-pct">—</div></div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="dash-grid-2">
@@ -452,34 +459,6 @@ tbody tr:hover{background:var(--surface2)}
   </div>
 </div>
 
-<!-- RESERVA -->
-<div id="page-reserva" class="page">
-  <div class="sg" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-    <div class="sc"><div class="sc-label">Meta</div><div class="sc-value" id="res-meta-val">—</div><div class="sc-sub">objetivo total</div></div>
-    <div class="sc"><div class="sc-label">Reserva atual</div><div class="sc-value" id="res-atual-val">—</div><div class="sc-sub" id="res-falta-val">—</div></div>
-    <div class="sc"><div class="sc-label">Progresso</div><div class="sc-value" id="res-pct-val">—</div><div class="res-bar-bg"><div class="res-bar-fill" id="res-bar" style="width:0%"></div></div></div>
-  </div>
-  <div class="section">
-    <div class="sh"><div class="st">Configurar meta</div></div>
-    <div class="fg" style="max-width:400px">
-      <div><label>Meta (R$)</label><input id="res-meta-in" type="number" min="0" step="100" placeholder="10000"></div>
-      <div><label>Valor atual (R$)</label><input id="res-atual-in" type="number" min="0" step="0.01" placeholder="600"></div>
-    </div>
-    <button class="btn bp" onclick="saveReserva()">Salvar</button>
-  </div>
-  <div class="section">
-    <div class="sh"><div class="st">Onde está guardada</div></div>
-    <div id="res-locs"></div>
-    <div class="fg" style="margin-top:12px">
-      <div><label>Local / Conta</label><input id="rl-local" placeholder="Ex: Nubank CDB"></div>
-      <div><label>Tipo</label><input id="rl-tipo" placeholder="CDB, Poupança..."></div>
-      <div><label>Valor (R$)</label><input id="rl-val" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div><label>Liquidez</label><input id="rl-liq" placeholder="D+0, D+1..."></div>
-    </div>
-    <button class="btn bp" onclick="addResLoc()">+ Adicionar local</button>
-  </div>
-</div>
-
 <!-- ESTUDO -->
 <div id="page-estudo" class="page">
   <div class="section">
@@ -534,6 +513,17 @@ tbody tr:hover{background:var(--surface2)}
   </div>
 </div>
 
+<!-- MODAL COFRINHOS -->
+<div class="modal-overlay" id="cof-modal">
+  <div class="modal">
+    <div class="modal-title">Cofrinhos</div>
+    <div id="cof-list"></div>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeCofModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -549,7 +539,8 @@ const CREDS = { user: 'guilherme', pass: 'fiis2024' };
 const METAS = {"Papel":0.30,"Logística":0.20,"Shopping":0.20,"Renda Urbana":0.10,"Lajes Corporativas":0.10,"FoF":0.05,"Híbrido/Outros":0.05};
 const CORES = {"Papel":"#1565c0","Logística":"#2e7d32","Shopping":"#e65100","Renda Urbana":"#c2185b","Lajes Corporativas":"#6a1b9a","FoF":"#00695c","Híbrido/Outros":"#546e7a"};
 
-let D = {fiis:[],dividendos:[],movimentos:[],reserva:{id:null,meta:10000,atual:600},reserva_locs:[],estudo:[],evolucao:[]};
+let D = {fiis:[],dividendos:[],movimentos:[],cofrinhos:[],estudo:[],evolucao:[]};
+const COF_CORES = {"Reserva de Emergência":"#1565c0","Objetivo":"#2e7d32","Viagem":"#e65100"};
 let editIdx = null;
 let cartSort = {col:null,dir:1};
 
@@ -625,14 +616,18 @@ async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.
 async function init(){
   setSyncStatus("loading","Carregando...");
   try{
-    const [fiis,divs,movs,res,locs,est,evo]=await Promise.all([
+    const [fiis,divs,movs,cofs,est,evo]=await Promise.all([
       sbGet('fiis'),sbGet('dividendos'),sbGet('movimentos'),
-      sbGet('reserva'),sbGet('reserva_locs'),sbGet('estudo'),
+      sbGet('cofrinhos'),sbGet('estudo'),
       sbGet('evolucao','order=data.asc').catch(()=>[])
     ]);
     D.fiis=fiis;D.dividendos=divs;D.movimentos=movs;
-    D.reserva=res[0]||{id:null,meta:10000,atual:600};
-    D.reserva_locs=locs;D.estudo=est;D.evolucao=evo;
+    D.cofrinhos=(cofs&&cofs.length)?cofs:[
+      {id:null,nome:'Reserva de Emergência',meta:10000,atual:0},
+      {id:null,nome:'Objetivo',meta:0,atual:0},
+      {id:null,nome:'Viagem',meta:0,atual:0}
+    ];
+    D.estudo=est;D.evolucao=evo;
     setSyncStatus("loading","Buscando preços...");
     await fetchPrices();
     await salvarEvolucaoSemanal();
@@ -760,15 +755,20 @@ function checkAlertas(){
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────
-function render(){rKraken();rDash();rCart();rAloc();rDivid();rMov();rReserva();rEstudo();checkAlertas();}
+function render(){rKraken();rDash();rCart();rAloc();rDivid();rMov();rEstudo();checkAlertas();}
 
 function rKraken(){
   const{tm}=totais();
   document.getElementById("kr-fii-val").textContent="FIIs · "+fmt(tm);
   document.getElementById("kr-fii-pct").textContent="100%";
   document.getElementById("kr-fii-legend-val").textContent=fmt(tm);
-  const rv=D.reserva;
-  document.getElementById("kr-reserva-pct").textContent=fmt(rv.atual)+" · "+fmtP(rv.meta>0?rv.atual/rv.meta:0)+" da meta";
+  const tip=document.getElementById("kr-cof-tip");
+  if(tip){
+    tip.innerHTML=D.cofrinhos.map(c=>{
+      const pct=c.meta>0?c.atual/c.meta:null;
+      return `<div style="font-size:11px;color:var(--text2);white-space:nowrap;padding:1px 0"><strong>${c.nome}</strong>: ${fmt(c.atual)}${pct!=null?" · "+fmtP(pct)+" da meta":""}</div>`;
+    }).join("");
+  }
 }
 function kraSoon(){
   const c=document.getElementById('kr-blur-target'),o=document.getElementById('kr-soon-overlay');
@@ -795,9 +795,6 @@ function rDash(){
   const ert=document.getElementById("d-rtotal");
   ert.textContent=fmt(rt);ert.className="sc-value "+(rt>=0?"pos":"neg");
   document.getElementById("d-rtotal-pct").textContent=(rtPct>=0?"+":"")+fmtP(rtPct)+" sobre investido";
-  const rv=D.reserva,pct2=rv.meta>0?rv.atual/rv.meta:0;
-  document.getElementById("d-res").textContent=fmt(rv.atual);
-  document.getElementById("d-res-pct").textContent=fmtP(pct2)+" da meta";
   const dy=dyMedio();
   document.getElementById("d-dy").textContent=dy!=null?(dy*100).toFixed(2)+"%":"—";
 
@@ -1246,42 +1243,62 @@ function rMov(){
   document.getElementById("mov-table").innerHTML=rows||`<tr><td colspan="9"><div class="empty">Nenhuma movimentação</div></td></tr>`;
 }
 
-// ── RESERVA ───────────────────────────────────────────────────────────────
-async function saveReserva(){
-  const meta=parseFloat(document.getElementById("res-meta-in").value)||D.reserva.meta;
-  const atual=parseFloat(document.getElementById("res-atual-in").value)||D.reserva.atual;
-  try{await sbPatch('reserva',D.reserva.id,{meta,atual});D.reserva.meta=meta;D.reserva.atual=atual;toast("Reserva atualizada!");rReserva();rDash();}
-  catch(e){alert("Erro: "+e.message);}
+// ── COFRINHOS ────────────────────────────────────────────────────────────
+function openCofModal(){renderCofList();document.getElementById("cof-modal").classList.add("open");}
+function closeCofModal(){document.getElementById("cof-modal").classList.remove("open");}
+document.getElementById("cof-modal").addEventListener("click",function(e){if(e.target===this)closeCofModal();});
+
+function renderCofList(){
+  document.getElementById("cof-list").innerHTML=D.cofrinhos.map((c,i)=>{
+    const pct=c.meta>0?Math.min(c.atual/c.meta,1):0;
+    const cor=COF_CORES[c.nome]||"var(--accent)";
+    return `<div class="cof-item">
+      <div class="cof-item-head" onclick="toggleCofEdit(${i})">
+        <div><div class="cof-item-name">${c.nome}</div><div class="cof-item-val">${fmt(c.atual)}${c.meta>0?" de "+fmt(c.meta):""}</div></div>
+        <button class="cof-edit-icon" title="Editar meta" onclick="event.stopPropagation();editCofMeta(${i})">🎯</button>
+      </div>
+      <div class="cof-item-bar"><div class="cof-item-fill" style="width:${pct*100}%;background:${cor}"></div></div>
+      <div class="cof-item-pct">${c.meta>0?fmtP(c.atual/c.meta)+" da meta":"sem meta definida — toque no 🎯 pra configurar"}</div>
+      <div class="cof-edit-row" id="cof-edit-${i}">
+        <input type="number" id="cof-input-${i}" step="0.01" placeholder="Novo valor atual" value="${c.atual}">
+        <button class="btn bp" onclick="saveCofValor(${i})">Salvar</button>
+      </div>
+    </div>`;
+  }).join("");
 }
-async function addResLoc(){
-  const local=document.getElementById("rl-local").value.trim();
-  const tipo=document.getElementById("rl-tipo").value.trim();
-  const valor=parseFloat(document.getElementById("rl-val").value)||0;
-  const liquidez=document.getElementById("rl-liq").value.trim();
-  if(!local||valor<=0){alert("Preencha local e valor.");return;}
-  try{const[novo]=await sbPost('reserva_locs',{local,tipo,valor,liquidez});D.reserva_locs.push(novo);["rl-local","rl-tipo","rl-val","rl-liq"].forEach(id=>document.getElementById(id).value="");toast("Local adicionado!");rReserva();}
-  catch(e){alert("Erro: "+e.message);}
+
+function toggleCofEdit(i){
+  document.querySelectorAll(".cof-edit-row").forEach(el=>{if(el.id!=="cof-edit-"+i)el.classList.remove("open");});
+  const row=document.getElementById("cof-edit-"+i);
+  row.classList.toggle("open");
+  if(row.classList.contains("open"))document.getElementById("cof-input-"+i).focus();
 }
-async function remResLoc(id){
-  try{await sbDelete('reserva_locs',id);D.reserva_locs=D.reserva_locs.filter(l=>l.id!==id);rReserva();}
-  catch(e){alert("Erro: "+e.message);}
+
+async function saveCofValor(i){
+  const c=D.cofrinhos[i];
+  const v=parseFloat(document.getElementById("cof-input-"+i).value);
+  if(isNaN(v)||v<0){alert("Digite um valor válido.");return;}
+  try{
+    if(c.id){await sbPatch('cofrinhos',c.id,{atual:v});}
+    else{const[novo]=await sbPost('cofrinhos',{nome:c.nome,meta:c.meta,atual:v});c.id=novo.id;}
+    c.atual=v;
+    toast(`${c.nome} atualizado!`);
+    renderCofList();rKraken();
+  }catch(e){alert("Erro: "+e.message);}
 }
-function rReserva(){
-  const rv=D.reserva,pct=rv.meta>0?rv.atual/rv.meta:0;
-  document.getElementById("res-meta-val").textContent=fmt(rv.meta);
-  document.getElementById("res-atual-val").textContent=fmt(rv.atual);
-  document.getElementById("res-falta-val").textContent=`Faltam ${fmt(Math.max(0,rv.meta-rv.atual))}`;
-  document.getElementById("res-pct-val").textContent=fmtP(pct);
-  document.getElementById("res-bar").style.width=Math.min(pct*100,100)+"%";
-  document.getElementById("res-meta-in").value=rv.meta;
-  document.getElementById("res-atual-in").value=rv.atual;
-  let rows="";
-  if(D.reserva_locs.length){
-    rows=`<table><thead><tr><th>Local</th><th>Tipo</th><th>Valor</th><th>Liquidez</th><th></th></tr></thead><tbody>`;
-    D.reserva_locs.forEach(l=>{rows+=`<tr><td>${l.local}</td><td>${l.tipo||"—"}</td><td>${fmt(l.valor)}</td><td>${l.liquidez||"—"}</td><td><button class="bi" onclick="remResLoc('${l.id}')">🗑</button></td></tr>`;});
-    rows+=`</tbody></table>`;
-  }else rows=`<div class="empty">Nenhum local cadastrado</div>`;
-  document.getElementById("res-locs").innerHTML=rows;
+
+async function editCofMeta(i){
+  const c=D.cofrinhos[i];
+  const v=prompt(`Nova meta de "${c.nome}":`,c.meta||0);
+  if(v===null)return;
+  const meta=parseFloat(v)||0;
+  try{
+    if(c.id){await sbPatch('cofrinhos',c.id,{meta});}
+    else{const[novo]=await sbPost('cofrinhos',{nome:c.nome,meta,atual:c.atual});c.id=novo.id;}
+    c.meta=meta;
+    toast(`Meta de ${c.nome} atualizada!`);
+    renderCofList();rKraken();
+  }catch(e){alert("Erro: "+e.message);}
 }
 
 // ── ESTUDO ────────────────────────────────────────────────────────────────

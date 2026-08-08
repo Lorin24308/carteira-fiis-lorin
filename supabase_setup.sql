@@ -12,6 +12,7 @@ create table if not exists fiis (
   preco numeric,
   pvp numeric,
   dy numeric,
+  pteto numeric,
   nome text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -39,22 +40,6 @@ create table if not exists movimentos (
   created_at timestamptz default now()
 );
 
-create table if not exists reserva (
-  id uuid primary key default gen_random_uuid(),
-  meta numeric not null default 10000,
-  atual numeric not null default 600,
-  updated_at timestamptz default now()
-);
-
-create table if not exists reserva_locs (
-  id uuid primary key default gen_random_uuid(),
-  local text not null,
-  tipo text,
-  valor numeric not null default 0,
-  liquidez text,
-  created_at timestamptz default now()
-);
-
 create table if not exists estudo (
   id uuid primary key default gen_random_uuid(),
   ticker text not null,
@@ -68,9 +53,22 @@ create table if not exists estudo (
   created_at timestamptz default now()
 );
 
--- Dados iniciais
-insert into reserva (meta, atual) values (10000, 600);
+create table if not exists cofrinhos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  meta numeric not null default 0,
+  atual numeric not null default 0,
+  updated_at timestamptz default now()
+);
 
+create table if not exists evolucao (
+  id uuid primary key default gen_random_uuid(),
+  data date not null,
+  patrimonio numeric not null,
+  created_at timestamptz default now()
+);
+
+-- Dados iniciais
 insert into fiis (ticker, tipo, cotas, pmedio) values
   ('GARE11', 'Renda Urbana', 4, 8.32),
   ('VGIR11', 'Papel', 5, 9.59),
@@ -86,17 +84,22 @@ insert into movimentos (data, operacao, ticker, tipo, qtd, preco, taxa, total) v
 insert into estudo (ticker, nome, tipo, status, notas) values
   ('HGBS11', 'CSHG Brasil Shopping', 'Shopping', 'Acompanhar', 'Parece compensar para um fundo de shopping base 20');
 
--- Row Level Security
-alter table fiis enable row level security;
+insert into cofrinhos (nome, meta, atual) values
+  ('Reserva de Emergência', 10000, 600),
+  ('Objetivo', 0, 0),
+  ('Viagem', 0, 0);
+
+-- Row Level Security — só usuários autenticados (login do app via Supabase Auth) acessam os dados
+alter table fiis       enable row level security;
 alter table dividendos enable row level security;
 alter table movimentos enable row level security;
-alter table reserva enable row level security;
-alter table reserva_locs enable row level security;
-alter table estudo enable row level security;
+alter table estudo     enable row level security;
+alter table cofrinhos  enable row level security;
+alter table evolucao   enable row level security;
 
-create policy "public_all" on fiis for all using (true) with check (true);
-create policy "public_all" on dividendos for all using (true) with check (true);
-create policy "public_all" on movimentos for all using (true) with check (true);
-create policy "public_all" on reserva for all using (true) with check (true);
-create policy "public_all" on reserva_locs for all using (true) with check (true);
-create policy "public_all" on estudo for all using (true) with check (true);
+create policy "authenticated_all" on fiis       for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on dividendos for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on movimentos for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on estudo     for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on cofrinhos  for all to authenticated using (true) with check (true);
+create policy "authenticated_all" on evolucao   for all to authenticated using (true) with check (true);

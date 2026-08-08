@@ -531,7 +531,6 @@ tbody tr:hover{background:var(--surface2)}
 // ── CONFIG ───────────────────────────────────────────────────────────────
 const SB_URL = 'https://pcsnkxnxafwqzqrsrkjw.supabase.co';
 const SB_KEY = 'sb_publishable_zXRySMw7MLGNIww7_e5IFg_5eDMZNkx';
-const BRAPI  = 'oEoWzmy9jNacHN4FZ5yQ4E';
 
 // Cliente Supabase Auth (a lib global se chama "supabase"; guardamos a instância em sbClient p/ não conflitar)
 const sbClient = supabase.createClient(SB_URL, SB_KEY);
@@ -654,7 +653,7 @@ async function fetchPrices(){
   if(!D.fiis.length)return;
   for(const f of D.fiis){
     try{
-      const r=await fetch(`https://brapi.dev/api/quote/${f.ticker}?fundamental=true&token=${BRAPI}`);
+      const r=await fetch(`/.netlify/functions/preco?ticker=${f.ticker}`);
       if(!r.ok)continue;
       const d=await r.json();
       if(d.results&&d.results[0]){

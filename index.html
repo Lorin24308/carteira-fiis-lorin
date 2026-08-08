@@ -526,15 +526,24 @@ tbody tr:hover{background:var(--surface2)}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── CONFIG ───────────────────────────────────────────────────────────────
 const SB_URL = 'https://pcsnkxnxafwqzqrsrkjw.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjc25reG54YWZ3cXpxcnNya2p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODk2ODEsImV4cCI6MjA5Njc2NTY4MX0.tKAc7MgrvTMQChnEoK3uzD60W8pYXNIR0RCpgBMd42k';
 const BRAPI  = 'oEoWzmy9jNacHN4FZ5yQ4E';
-const HEADERS = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=representation'};
 
-// CREDENCIAIS DE LOGIN (simples, client-side)
-const CREDS = { user: 'guilherme', pass: 'fiis2024' };
+// Cliente Supabase Auth (a lib global se chama "supabase"; guardamos a instância em sbClient p/ não conflitar)
+const sbClient = supabase.createClient(SB_URL, SB_KEY);
+
+// Login por "usuário" mapeado para o email cadastrado no Supabase Auth
+const USER_EMAIL_MAP = { guilherme: 'kingglf55@gmail.com' };
+
+// Headers das chamadas REST: usa o token da sessão logada quando existir, senão cai pra anon key
+async function authHeaders(){
+  const { data:{ session } } = await sbClient.auth.getSession();
+  return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${session?session.access_token:SB_KEY}`,'Prefer':'return=representation'};
+}
 
 const METAS = {"Papel":0.30,"Logística":0.20,"Shopping":0.20,"Renda Urbana":0.10,"Lajes Corporativas":0.10,"FoF":0.05,"Híbrido/Outros":0.05};
 const CORES = {"Papel":"#1565c0","Logística":"#2e7d32","Shopping":"#e65100","Renda Urbana":"#c2185b","Lajes Corporativas":"#6a1b9a","FoF":"#00695c","Híbrido/Outros":"#546e7a"};
@@ -545,27 +554,31 @@ let editIdx = null;
 let cartSort = {col:null,dir:1};
 
 // ── LOGIN ────────────────────────────────────────────────────────────────
-function doLogin() {
-  const u = document.getElementById('l-user').value.trim();
+async function doLogin() {
+  const u = document.getElementById('l-user').value.trim().toLowerCase();
   const p = document.getElementById('l-pass').value;
-  if (u === CREDS.user && p === CREDS.pass) {
-    sessionStorage.setItem('fii_auth','1');
-    document.getElementById('login-wrap').style.display = 'none';
-    document.getElementById('lobby-wrap').style.display = 'block';
-    init();
-  } else {
-    document.getElementById('l-err').style.display = 'block';
-  }
+  document.getElementById('l-err').style.display = 'none';
+  const email = USER_EMAIL_MAP[u];
+  if (!email) { document.getElementById('l-err').style.display = 'block'; return; }
+  const { error } = await sbClient.auth.signInWithPassword({ email, password: p });
+  if (error) { document.getElementById('l-err').style.display = 'block'; return; }
+  document.getElementById('login-wrap').style.display = 'none';
+  document.getElementById('lobby-wrap').style.display = 'block';
+  init();
 }
-function doLogout() {
-  sessionStorage.removeItem('fii_auth');
+async function doLogout() {
+  await sbClient.auth.signOut();
   location.reload();
 }
 // Verifica sessão ao carregar
-if (sessionStorage.getItem('fii_auth') === '1') {
-  document.getElementById('login-wrap').style.display = 'none';
-  document.getElementById('lobby-wrap').style.display = 'block';
-}
+(async () => {
+  const { data:{ session } } = await sbClient.auth.getSession();
+  if (session) {
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('lobby-wrap').style.display = 'block';
+    init();
+  }
+})();
 // Vai do lobby pro app (aba Dashboard) e volta
 function abrirFiis(){
   document.getElementById('lobby-wrap').style.display='none';
@@ -607,10 +620,10 @@ function toast(msg,dur=2800){
 }
 
 // ── SUPABASE ─────────────────────────────────────────────────────────────
-async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:HEADERS});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function sbPost(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:HEADERS,body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function sbPatch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:HEADERS,body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:HEADERS});if(!r.ok)throw new Error(await r.text());}
+async function sbGet(t,q=''){const r=await fetch(`${SB_URL}/rest/v1/${t}?${q}`,{headers:await authHeaders()});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPost(t,b){const r=await fetch(`${SB_URL}/rest/v1/${t}`,{method:'POST',headers:await authHeaders(),body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPatch(t,id,b){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:await authHeaders(),body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:await authHeaders()});if(!r.ok)throw new Error(await r.text());}
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 async function init(){
@@ -1336,8 +1349,6 @@ function sw(tab,el){
   if(tab==='dashboard'){drawPizza(aloc().a,aloc().tm);drawEvolucao();drawDividChart();}
 }
 
-// Inicia se já logado
-if(sessionStorage.getItem('fii_auth')==='1')init();
 </script>
 </body>
 </html>

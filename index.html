@@ -651,27 +651,30 @@ async function init(){
 // ── PREÇOS ───────────────────────────────────────────────────────────────
 async function fetchPrices(){
   if(!D.fiis.length)return;
-  for(const f of D.fiis){
+  await Promise.all(D.fiis.map(async f=>{
     try{
       const r=await fetch(`/.netlify/functions/preco?ticker=${f.ticker}`);
-      if(!r.ok)continue;
+      if(!r.ok)throw new Error('http '+r.status);
       const d=await r.json();
-      if(d.results&&d.results[0]){
-        const q=d.results[0];
-        if(q.regularMarketPrice)f.preco=q.regularMarketPrice;
-        // P/VP: tenta priceToBook, depois bookValue calculado manualmente
-        if(q.priceToBook!=null&&q.priceToBook>0){
-          f.pvp=q.priceToBook;
-        }else if(q.regularMarketPrice&&q.bookValue&&q.bookValue>0){
-          f.pvp=q.regularMarketPrice/q.bookValue;
-        }
-        // DY: brapi retorna como decimal (ex: 0.12 = 12%)
-        if(q.dividendYield!=null&&q.dividendYield>0)f.dy=q.dividendYield/100;
-        else if(q.dividendYield!=null)f.dy=q.dividendYield;
-        if(q.shortName)f.nome=q.shortName;
+      if(!d.results||!d.results[0])throw new Error('sem resultado');
+      const q=d.results[0];
+      if(q.regularMarketPrice)f.preco=q.regularMarketPrice;
+      // P/VP: tenta priceToBook, depois bookValue calculado manualmente
+      if(q.priceToBook!=null&&q.priceToBook>0){
+        f.pvp=q.priceToBook;
+      }else if(q.regularMarketPrice&&q.bookValue&&q.bookValue>0){
+        f.pvp=q.regularMarketPrice/q.bookValue;
       }
-    }catch(e){if(f.preco==null)f.preco=f.pmedio;}
-  }
+      // DY: brapi retorna como decimal (ex: 0.12 = 12%)
+      if(q.dividendYield!=null&&q.dividendYield>0)f.dy=q.dividendYield/100;
+      else if(q.dividendYield!=null)f.dy=q.dividendYield;
+      if(q.shortName)f.nome=q.shortName;
+      f.precoErro=false;
+    }catch(e){
+      f.precoErro=true;
+      if(f.preco==null)f.preco=f.pmedio;
+    }
+  }));
 }
 
 // ── EVOLUÇÃO SEMANAL ──────────────────────────────────────────────────────
@@ -852,7 +855,8 @@ function rDash(){
   D.fiis.forEach(f=>{
     const p=pa(f),v=f.cotas*p,r=f.cotas*(p-f.pmedio),rp=f.pmedio>0?(p-f.pmedio)/f.pmedio:0,cp=tm>0?v/tm:0;
     const pvpCls=f.pvp!=null?(f.pvp<0.90?'pvp-ok':f.pvp<1.0?'pvp-warn':'pvp-bad'):'';
-    rows+=`<tr><td class="ticker">${f.ticker}</td><td><span class="badge bgr">${f.tipo}</span></td><td>${f.cotas}</td><td>${fmt(p)}</td><td>${fmt(v)}</td>
+    const errIco=f.precoErro?` <span title="Falha ao buscar cotação — mostrando último preço conhecido" style="color:var(--amber);cursor:help">⚠</span>`:'';
+    rows+=`<tr><td class="ticker">${f.ticker}</td><td><span class="badge bgr">${f.tipo}</span></td><td>${f.cotas}</td><td>${fmt(p)}${errIco}</td><td>${fmt(v)}</td>
       <td class="${pvpCls}">${f.pvp!=null?f.pvp.toFixed(2):"—"}</td>
       <td class="${r>=0?'pos':'neg'}">${fmt(r)} (${(rp*100).toFixed(1)}%)</td><td>${fmtP(cp)}</td></tr>`;
   });
@@ -1031,10 +1035,11 @@ function rCart(){
     const pvpCls=f.pvp!=null?(f.pvp<0.90?'pvp-ok':f.pvp<1.0?'pvp-warn':'pvp-bad'):'';
     const tetoOk=f.pteto&&p<=f.pteto;
     const tetoTxt=f.pteto?`<span style="color:${tetoOk?'var(--green)':'var(--text3)'}">${fmt(f.pteto)}${tetoOk?' ✓':''}</span>`:`<span style="color:var(--text3)">—</span>`;
+    const errIco=f.precoErro?` <span title="Falha ao buscar cotação — mostrando último preço conhecido" style="color:var(--amber);cursor:help">⚠</span>`:'';
     rows+=`<tr>
       <td class="ticker">${f.ticker}</td>
       <td><span class="badge bgr">${f.tipo}</span></td>
-      <td>${f.cotas}</td><td>${fmt(f.pmedio)}</td><td>${fmt(p)}</td>
+      <td>${f.cotas}</td><td>${fmt(f.pmedio)}</td><td>${fmt(p)}${errIco}</td>
       <td>${tetoTxt}</td>
       <td>${fmt(vi)}</td><td>${fmt(va2)}</td>
       <td class="${r>=0?'pos':'neg'}">${r>=0?"+":""}${fmt(r)} (${(rp*100).toFixed(1)}%)</td>

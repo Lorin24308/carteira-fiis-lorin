@@ -8,13 +8,14 @@
 
 ## 0. IMPORTANTE — leia antes de gerar/editar o `index.html`
 
-Este projeto é editado por **dois caminhos diferentes**: chats no Claude.ai (que geram o
-`index.html` inteiro, feature por feature, publicado via `atualizar.ps1`) e sessões de
-Claude Code (que editam o repositório diretamente e já têm acesso de commit/push).
+Este projeto era editado por dois caminhos (um Claude.ai Project que gerava o `index.html`
+inteiro via `atualizar.ps1`, e sessões de Claude Code). **A partir de agosto/2026 o trabalho
+neste projeto acontece só via Claude Code** — o Claude.ai Project não é mais usado. O
+`atualizar.ps1` continua no repo por enquanto, mas é um script legado.
 
 Em 09/08/2026 uma sessão de Claude Code fez uma rodada de correções de segurança que
-**mudou partes estruturais do arquivo**. Se você for gerar o `index.html` do zero ou reescrever
-grandes trechos dele, **busque a versão viva do GitHub primeiro** e preserve obrigatoriamente:
+**mudou partes estruturais do arquivo**. Se qualquer sessão futura for reescrever grandes
+trechos do `index.html`, preserve obrigatoriamente:
 
 - A tag `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>` antes do
   `<script>` principal.
@@ -232,9 +233,7 @@ da verdade, mantida sincronizada com o banco real.
 
 ### Fluxo de deploy
 
-Duas formas coexistem hoje:
-
-**Via Claude Code** (sessões com acesso direto ao repositório local/git):
+O trabalho no projeto acontece só via Claude Code:
 ```
 Editar index.html / supabase_setup.sql / etc. direto no repositório
   → git add / commit / push
@@ -243,49 +242,32 @@ Editar index.html / supabase_setup.sql / etc. direto no repositório
 O usuário deu autorização permanente para commit/push automático neste repositório,
 desde que a mudança tenha sido planejada e combinada com ele antes de executar.
 
-**Via Claude.ai** (chat gerando o `index.html` inteiro):
-```
-Gerar index.html completo
-  → usuário salva em Downloads
-  → roda atualizar.ps1 (copia p/ pasta do projeto, git add/commit/push)
-  → Netlify faz deploy automático (~30s)
-```
+Mudanças de SQL vão direto no **SQL Editor do Supabase** antes/depois do deploy do front,
+conforme o caso.
 
-Mudanças de SQL vão direto no **SQL Editor do Supabase** antes do deploy do front.
+`atualizar.ps1` é um script legado do antigo fluxo via Claude.ai (copiava um `index.html`
+gerado em outro lugar para o repo e publicava). Não é mais usado, mas continua no repositório.
 
-O script `atualizar.ps1` já faz `git fetch` + `git reset --hard origin/main` antes de copiar,
-para evitar conflitos quando o usuário editou algo direto pelo GitHub.
+### Regras de trabalho atuais (via Claude Code)
 
-> ⚠️ Como os dois fluxos convivem, **sempre buscar a versão viva do repositório antes de reescrever
-> arquivos inteiros** — veja a seção 0 no topo deste documento para o que não pode ser perdido.
-
-### Regras de trabalho que o usuário definiu
-
-1. **Planejamento único e antecipado (para features grandes via Claude.ai).** Antes de escrever
-   qualquer código de uma feature, levantar **todas** as perguntas estruturais de uma vez e fechar
-   o plano completo. Nunca ir perguntando aos poucos no meio da construção.
-
-2. **Visual primeiro.** Para qualquer coisa de UI/design, mostrar mockups com variações
+1. **Visual primeiro.** Para qualquer coisa de UI/design, mostrar mockups com variações
    **antes** de escrever código de produção. Mostrar opções → usuário escolhe → aí sim implementar.
 
-3. **Discutir tudo → aprovar → executar de uma vez.** Nada de entregas parciais incrementais.
-   Uma única entrega de arquivo por rodada (no fluxo via Claude.ai).
-
-4. **Disciplina de chats (Claude.ai):**
-   - Cada feature grande tem seu próprio chat: "FIIs — [nome da feature]"
-   - Correções pequenas e dúvidas rápidas vão no chat geral de manutenção
-   - Análise de fundos (RIs, mercado, situação de FIIs) tem chat próprio e separado
-   - Ideia levantada no chat errado é redirecionada com o template:
-     *nome da feature / o que se quer / onde entra no app / contexto e decisões já tomadas / restrições*
-
-5. **Estilo de resposta:** direto ao ponto, sempre explicando o raciocínio por trás da mudança.
+2. **Estilo de resposta:** direto ao ponto, sempre explicando o raciocínio por trás da mudança.
    Sem rodeios. O usuário está aprendendo — vale orientar quando algo for específico da ferramenta,
    e explicar termos técnicos em linguagem simples (ele avisou que não domina a maioria deles).
 
-6. O usuário **decide** o que é executado. Sugestões e ideias são bem-vindas, mas ele escolhe.
+3. O usuário **decide** o que é executado. Sugestões e ideias são bem-vindas, mas ele escolhe.
    Dito isso, ele prefere deixar o máximo possível automático — não é necessário parar para
    confirmar cada passo pequeno depois que uma direção já foi combinada; reportar o que foi
    feito é suficiente, exceto para ações genuinamente arriscadas ou difíceis de reverter.
+
+4. Commit/push direto no repositório está autorizado permanentemente, desde que a mudança
+   tenha sido combinada com o usuário antes de executar.
+
+> Regras antigas do fluxo via Claude.ai (planejamento único fechado antes de codar, uma entrega
+> de arquivo inteiro por rodada, disciplina de chats separados por feature) não se aplicam mais —
+> eram específicas daquele workflow, que foi descontinuado em agosto/2026.
 
 ### Regras técnicas importantes
 

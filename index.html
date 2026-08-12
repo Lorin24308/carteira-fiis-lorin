@@ -265,6 +265,7 @@ tbody tr:hover{background:var(--surface2)}
     <span class="upd" id="upd">Conectando...</span>
     <button class="btn-sm" onclick="init()">↻</button>
     <button class="btn-sm" onclick="toggleDark()" id="dark-btn">🌙</button>
+    <button class="btn-sm" onclick="openPassModal()" title="Alterar senha">🔑</button>
     <button class="btn-sm" onclick="doLogout()">Sair</button>
   </div>
 </header>
@@ -524,6 +525,21 @@ tbody tr:hover{background:var(--surface2)}
   </div>
 </div>
 
+<!-- MODAL ALTERAR SENHA -->
+<div class="modal-overlay" id="pass-modal">
+  <div class="modal">
+    <div class="modal-title">Alterar senha</div>
+    <div class="fg">
+      <div><label>Nova senha</label><input id="np-senha" type="password" placeholder="Mínimo 6 caracteres"></div>
+      <div><label>Confirmar nova senha</label><input id="np-senha2" type="password" placeholder="Repita a senha"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closePassModal()">Cancelar</button>
+      <button class="btn bp" onclick="salvarNovaSenha()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -587,6 +603,37 @@ async function doLogout() {
     init();
   }
 })();
+// Se chegar aqui por um link de recuperação de senha por email, entra automaticamente
+// e já abre o modal de definir senha nova, em vez de deixar a pessoa travada.
+sbClient.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('lobby-wrap').style.display = 'block';
+    init();
+    openPassModal();
+  }
+});
+
+// ── ALTERAR SENHA ────────────────────────────────────────────────────────
+function openPassModal(){
+  document.getElementById('np-senha').value='';
+  document.getElementById('np-senha2').value='';
+  document.getElementById('pass-modal').classList.add('open');
+}
+function closePassModal(){document.getElementById('pass-modal').classList.remove('open');}
+document.getElementById('pass-modal').addEventListener('click',function(e){if(e.target===this)closePassModal();});
+async function salvarNovaSenha(){
+  const s1=document.getElementById('np-senha').value;
+  const s2=document.getElementById('np-senha2').value;
+  if(s1.length<6){alert('A senha precisa ter pelo menos 6 caracteres.');return;}
+  if(s1!==s2){alert('As senhas não coincidem.');return;}
+  try{
+    const {error}=await sbClient.auth.updateUser({password:s1});
+    if(error)throw error;
+    closePassModal();
+    toast('Senha alterada com sucesso!');
+  }catch(e){alert('Erro ao alterar senha: '+e.message);}
+}
 // Vai do lobby pro app (aba Dashboard) e volta
 function abrirFiis(){
   document.getElementById('lobby-wrap').style.display='none';

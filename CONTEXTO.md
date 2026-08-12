@@ -318,7 +318,29 @@ Coisas que já foram esclarecidas e não precisam ser reexplicadas:
 
 ---
 
-## 10. Log de mudanças
+## 10. Revisão de bugs (11-12/08/2026)
+
+Uma revisão completa do `index.html` encontrou e corrigiu:
+- Apagar uma movimentação não desfazia o efeito dela na carteira — corrigido: a posição de
+  cada ticker agora é sempre **recalculada do zero** a partir do histórico de movimentações
+  (`recalcularPosicao()`), tanto ao adicionar quanto ao remover uma movimentação.
+- Vender mais cotas do que a posição atual apagava o FII silenciosamente — agora `addMov()`
+  valida antes de gravar e avisa o usuário.
+- Sessão expirada gerava erro técnico genérico — `authHeaders()` agora detecta sessão ausente
+  e manda de volta pro login.
+- Falha em uma tabela do Supabase travava o carregamento inteiro — `init()` usa
+  `Promise.allSettled`, cada tabela falha de forma independente.
+- Cálculo de "número da semana" do snapshot de patrimônio (`getISOWeek`) tinha risco de
+  duplicar/pular na virada do ano — trocado por um controle simples de "6+ dias desde o
+  último snapshot".
+- **Categoria "FoF" removida** das metas de alocação e de todos os seletores de tipo — não
+  fazia parte da estratégia real documentada. Meta de Logística ajustada de 20% para 22,5% e
+  de Híbrido/Outros de 5% para 7,5%, para bater com a tabela da seção 3 deste documento.
+- Decisão tomada: **não** adicionar um terceiro botão "Reinvestimento" no modal de
+  movimentação — registrar como "Compra" já produz exatamente o mesmo efeito no cálculo de
+  posição, então o botão extra seria redundante.
+
+## 11. Log de mudanças
 
 - **09/08/2026** — Sessão de correções de segurança (via Claude Code): login real via Supabase
   Auth, RLS travado para `authenticated` em todas as tabelas, anon key legada desativada (app
@@ -326,3 +348,6 @@ Coisas que já foram esclarecidas e não precisam ser reexplicadas:
   `supabase_setup.sql` sincronizado com o schema real (`cofrinhos`, `evolucao`, `pteto`, sem
   `reserva`/`reserva_locs`), busca de cotações paralelizada com aviso visual de erro, README
   atualizado com o setup completo. Este arquivo (`CONTEXTO.md`) passou a viver no repositório.
+- **11-12/08/2026** — Revisão de bugs (ver seção 10): correções de integridade de dados
+  (recálculo de posição, validação de venda a descoberto), robustez (sessão expirada, falha
+  parcial de tabelas, snapshot semanal) e remoção da categoria "FoF" das metas de alocação.

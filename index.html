@@ -353,7 +353,7 @@ tbody tr:hover{background:var(--surface2)}
       <select id="cart-filtro-tipo" onchange="rCart()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);color:var(--text2);cursor:pointer">
         <option value="">Todos os tipos</option>
         <option>Papel</option><option>Logística</option><option>Shopping</option>
-        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>Híbrido/Outros</option>
       </select>
     </div>
     <div style="overflow-x:auto">
@@ -442,7 +442,7 @@ tbody tr:hover{background:var(--surface2)}
       <div><label>Ticker</label><input id="mv-ticker" placeholder="Ex: HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
       <div><label>Tipo de ativo</label><select id="mv-tipo">
         <option>Papel</option><option>Logística</option><option>Shopping</option>
-        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>Híbrido/Outros</option>
       </select></div>
       <div><label>Quantidade de cotas</label><input id="mv-qtd" type="number" min="0" step="1" placeholder="0" oninput="calcMovTotal()"></div>
       <div><label>Preço unitário (R$)</label><input id="mv-preco" type="number" min="0" step="0.01" placeholder="0,00" oninput="calcMovTotal()"></div>
@@ -468,7 +468,7 @@ tbody tr:hover{background:var(--surface2)}
       <div><label>Nome</label><input id="es-nome" placeholder="Nome do fundo"></div>
       <div><label>Tipo</label><select id="es-tipo">
         <option>Papel</option><option>Logística</option><option>Shopping</option>
-        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>Híbrido/Outros</option>
       </select></div>
       <div><label>P/VP</label><input id="es-pvp" type="number" step="0.01" placeholder="0,00"></div>
       <div><label>DY 12m (%)</label><input id="es-dy" type="number" step="0.01" placeholder="0,0"></div>
@@ -500,7 +500,7 @@ tbody tr:hover{background:var(--surface2)}
       <div><label>Ticker</label><input id="e-ticker" oninput="this.value=this.value.toUpperCase()"></div>
       <div><label>Tipo</label><select id="e-tipo">
         <option>Papel</option><option>Logística</option><option>Shopping</option>
-        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>FoF</option><option>Híbrido/Outros</option>
+        <option>Renda Urbana</option><option>Lajes Corporativas</option><option>Híbrido/Outros</option>
       </select></div>
       <div><label>Qtd. cotas</label><input id="e-cotas" type="number" min="0" step="1"></div>
       <div><label>Preço médio (R$)</label><input id="e-pmedio" type="number" min="0" step="0.01"></div>
@@ -553,8 +553,8 @@ async function authHeaders(){
   return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${session.access_token}`,'Prefer':'return=representation'};
 }
 
-const METAS = {"Papel":0.30,"Logística":0.20,"Shopping":0.20,"Renda Urbana":0.10,"Lajes Corporativas":0.10,"FoF":0.05,"Híbrido/Outros":0.05};
-const CORES = {"Papel":"#1565c0","Logística":"#2e7d32","Shopping":"#e65100","Renda Urbana":"#c2185b","Lajes Corporativas":"#6a1b9a","FoF":"#00695c","Híbrido/Outros":"#546e7a"};
+const METAS = {"Papel":0.30,"Logística":0.225,"Shopping":0.20,"Renda Urbana":0.10,"Lajes Corporativas":0.10,"Híbrido/Outros":0.075};
+const CORES = {"Papel":"#1565c0","Logística":"#2e7d32","Shopping":"#e65100","Renda Urbana":"#c2185b","Lajes Corporativas":"#6a1b9a","Híbrido/Outros":"#546e7a"};
 
 let D = {fiis:[],dividendos:[],movimentos:[],cofrinhos:[],estudo:[],evolucao:[]};
 const COF_CORES = {"Reserva de Emergência":"#1565c0","Objetivo":"#2e7d32","Viagem":"#e65100"};

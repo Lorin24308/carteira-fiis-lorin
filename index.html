@@ -538,10 +538,19 @@ const sbClient = supabase.createClient(SB_URL, SB_KEY);
 // Login por "usuário" mapeado para o email cadastrado no Supabase Auth
 const USER_EMAIL_MAP = { guilherme: 'kingglf55@gmail.com' };
 
-// Headers das chamadas REST: usa o token da sessão logada quando existir, senão cai pra anon key
+// Headers das chamadas REST: usa o token da sessão logada. Se não houver sessão válida,
+// manda de volta pro login em vez de tentar a chamada fadada a falhar.
+let sessaoExpiradaMostrada = false;
+function sessionExpirada(){
+  if(sessaoExpiradaMostrada)return;
+  sessaoExpiradaMostrada = true;
+  alert('Sua sessão expirou. Faça login novamente.');
+  location.reload();
+}
 async function authHeaders(){
   const { data:{ session } } = await sbClient.auth.getSession();
-  return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${session?session.access_token:SB_KEY}`,'Prefer':'return=representation'};
+  if(!session){ sessionExpirada(); throw new Error('Sessão expirada'); }
+  return {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${session.access_token}`,'Prefer':'return=representation'};
 }
 
 const METAS = {"Papel":0.30,"Logística":0.20,"Shopping":0.20,"Renda Urbana":0.10,"Lajes Corporativas":0.10,"FoF":0.05,"Híbrido/Outros":0.05};
@@ -627,25 +636,40 @@ async function sbDelete(t,id){const r=await fetch(`${SB_URL}/rest/v1/${t}?id=eq.
 // ── INIT ─────────────────────────────────────────────────────────────────
 async function init(){
   setSyncStatus("loading","Carregando...");
-  try{
-    const [fiis,divs,movs,cofs,est,evo]=await Promise.all([
-      sbGet('fiis'),sbGet('dividendos'),sbGet('movimentos'),
-      sbGet('cofrinhos'),sbGet('estudo'),
-      sbGet('evolucao','order=data.asc').catch(()=>[])
-    ]);
-    D.fiis=fiis;D.dividendos=divs;D.movimentos=movs;
-    D.cofrinhos=(cofs&&cofs.length)?cofs:[
-      {id:null,nome:'Reserva de Emergência',meta:10000,atual:0},
-      {id:null,nome:'Objetivo',meta:0,atual:0},
-      {id:null,nome:'Viagem',meta:0,atual:0}
-    ];
-    D.estudo=est;D.evolucao=evo;
-    setSyncStatus("loading","Buscando preços...");
-    await fetchPrices();
-    await salvarEvolucaoSemanal();
+  const [fiisR,divsR,movsR,cofsR,estR,evoR]=await Promise.allSettled([
+    sbGet('fiis'),sbGet('dividendos'),sbGet('movimentos'),
+    sbGet('cofrinhos'),sbGet('estudo'),
+    sbGet('evolucao','order=data.asc')
+  ]);
+  const falhas=[];
+  const val=(r,nome,fallback)=>{
+    if(r.status==='fulfilled')return r.value;
+    falhas.push(nome);console.error(nome,r.reason);
+    return fallback;
+  };
+  D.fiis      =val(fiisR,'FIIs',D.fiis);
+  D.dividendos=val(divsR,'Dividendos',D.dividendos);
+  D.movimentos=val(movsR,'Movimentos',D.movimentos);
+  const cofs  =val(cofsR,'Cofrinhos',D.cofrinhos);
+  D.cofrinhos =(cofs&&cofs.length)?cofs:[
+    {id:null,nome:'Reserva de Emergência',meta:10000,atual:0},
+    {id:null,nome:'Objetivo',meta:0,atual:0},
+    {id:null,nome:'Viagem',meta:0,atual:0}
+  ];
+  D.estudo    =val(estR,'Estudo',D.estudo);
+  D.evolucao  =val(evoR,'Evolução',D.evolucao);
+
+  setSyncStatus("loading","Buscando preços...");
+  await fetchPrices();
+  await salvarEvolucaoSemanal();
+
+  if(falhas.length){
+    setSyncStatus("err",`Falha em: ${falhas.join(', ')}`);
+    toast(`Não consegui carregar: ${falhas.join(', ')}. Mostrando os últimos dados conhecidos.`);
+  }else{
     setSyncStatus("ok","Sincronizado ✓");
-    render();
-  }catch(e){setSyncStatus("err","Erro de conexão");console.error(e);}
+  }
+  render();
 }
 
 // ── PREÇOS ───────────────────────────────────────────────────────────────
@@ -681,23 +705,18 @@ async function fetchPrices(){
 async function salvarEvolucaoSemanal(){
   const {tm}=totais();
   if(tm<=0)return;
-  const hoje=new Date().toISOString().split('T')[0];
-  // Verifica se já tem registro dessa semana
-  const semanaAtual=getISOWeek(new Date());
-  const jaTemSemana=D.evolucao.some(e=>{
-    const d=new Date(e.data);
-    return getISOWeek(d)===semanaAtual && d.getFullYear()===new Date().getFullYear();
-  });
-  if(!jaTemSemana){
+  const hoje=new Date();
+  const hojeStr=hoje.toISOString().split('T')[0];
+  // Só grava um novo snapshot se já passaram pelo menos 6 dias desde o último
+  // (evita duplicar/pular na virada do ano, que um cálculo de "número da semana" sofreria)
+  const ultimo=D.evolucao.length?D.evolucao[D.evolucao.length-1]:null;
+  const diasDesdeUltimo=ultimo?(hoje-new Date(ultimo.data))/86400000:Infinity;
+  if(diasDesdeUltimo>=6){
     try{
-      const [novo]=await sbPost('evolucao',{data:hoje,patrimonio:+tm.toFixed(2)});
+      const [novo]=await sbPost('evolucao',{data:hojeStr,patrimonio:+tm.toFixed(2)});
       D.evolucao.push(novo);
     }catch(e){}
   }
-}
-function getISOWeek(d){
-  const jan4=new Date(d.getFullYear(),0,4);
-  return Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7);
 }
 
 // ── CÁLCULOS ─────────────────────────────────────────────────────────────
@@ -1214,6 +1233,36 @@ function calcMovTotal(){
 }
 document.getElementById("mov-modal").addEventListener("click",function(e){if(e.target===this)closeMovModal();});
 
+// Recalcula cotas e preço médio de um ticker a partir do histórico completo de
+// movimentações (em vez de somar/subtrair incrementalmente) — assim, adicionar ou
+// remover qualquer movimentação sempre deixa a carteira consistente com o histórico.
+async function recalcularPosicao(ticker,tipoFallback){
+  const movs=D.movimentos.filter(m=>m.ticker===ticker).sort((a,b)=>a.data.localeCompare(b.data));
+  let cotas=0,custoTotal=0,tipo=tipoFallback;
+  movs.forEach(m=>{
+    tipo=m.tipo||tipo;
+    if(m.operacao==='Compra'||m.operacao==='Reinvestimento'){
+      cotas+=m.qtd;
+      custoTotal+=m.qtd*m.preco;
+    }else if(m.operacao==='Venda'){
+      const pmedioAntes=cotas>0?custoTotal/cotas:0;
+      cotas=Math.max(0,cotas-m.qtd);
+      custoTotal=Math.max(0,custoTotal-m.qtd*pmedioAntes);
+    }
+  });
+  const pmedio=cotas>0?custoTotal/cotas:0;
+  const fiiEx=D.fiis.find(f=>f.ticker===ticker);
+  if(cotas<=0){
+    if(fiiEx){await sbDelete('fiis',fiiEx.id);D.fiis=D.fiis.filter(f=>f.id!==fiiEx.id);}
+  }else if(fiiEx){
+    await sbPatch('fiis',fiiEx.id,{cotas,pmedio:+pmedio.toFixed(4)});
+    fiiEx.cotas=cotas;fiiEx.pmedio=+pmedio.toFixed(4);
+  }else{
+    const[nf]=await sbPost('fiis',{ticker,tipo,cotas,pmedio:+pmedio.toFixed(4)});
+    D.fiis.push(nf);
+  }
+}
+
 async function addMov(){
   const data=document.getElementById("mv-data").value;
   const operacao=document.getElementById("mv-op").value;
@@ -1222,34 +1271,36 @@ async function addMov(){
   const qtd=parseFloat(document.getElementById("mv-qtd").value)||0;
   const preco=parseFloat(document.getElementById("mv-preco").value)||0;
   if(!data||!ticker||qtd<=0||preco<=0){alert("Preencha todos os campos.");return;}
+  if(operacao==='Venda'){
+    const fiiAntes=D.fiis.find(f=>f.ticker===ticker);
+    const cotasAtuais=fiiAntes?fiiAntes.cotas:0;
+    if(qtd>cotasAtuais){
+      alert(`Você está tentando vender ${qtd} cotas de ${ticker}, mas só tem ${cotasAtuais} na carteira.`);
+      return;
+    }
+  }
   const total=qtd*preco;
   const taxa=0;
   try{
     const[novo]=await sbPost('movimentos',{data,operacao,ticker,tipo,qtd,preco,taxa,total});
     D.movimentos.push(novo);
-    const fiiEx=D.fiis.find(f=>f.ticker===ticker);
-    if(operacao==='Compra'||operacao==='Reinvestimento'){
-      if(fiiEx){
-        const nc=fiiEx.cotas+qtd,np=((fiiEx.cotas*fiiEx.pmedio)+(qtd*preco))/nc;
-        await sbPatch('fiis',fiiEx.id,{cotas:nc,pmedio:+np.toFixed(4)});
-        fiiEx.cotas=nc;fiiEx.pmedio=+np.toFixed(4);
-        toast(`${ticker}: ${nc} cotas @ ${fmt(np)}`);
-      }else{
-        const[nf]=await sbPost('fiis',{ticker,tipo,cotas:qtd,pmedio:preco});
-        D.fiis.push(nf);toast(`${ticker} adicionado à carteira!`);
-      }
-    }else if(operacao==='Venda'&&fiiEx){
-      const nc=fiiEx.cotas-qtd;
-      if(nc<=0){await sbDelete('fiis',fiiEx.id);D.fiis=D.fiis.filter(f=>f.id!==fiiEx.id);toast(`${ticker} removido (posição zerada).`);}
-      else{await sbPatch('fiis',fiiEx.id,{cotas:nc});fiiEx.cotas=nc;toast(`${ticker}: ${nc} cotas restantes.`);}
-    }
+    await recalcularPosicao(ticker,tipo);
+    const fiiDepois=D.fiis.find(f=>f.ticker===ticker);
+    if(fiiDepois)toast(`${ticker}: ${fiiDepois.cotas} cotas @ ${fmt(fiiDepois.pmedio)}`);
+    else toast(`${ticker} removido (posição zerada).`);
     closeMovModal();
     await fetchPrices();render();
   }catch(e){alert("Erro: "+e.message);}
 }
 async function remMov(id){
-  try{await sbDelete('movimentos',id);D.movimentos=D.movimentos.filter(m=>m.id!==id);rMov();}
-  catch(e){alert("Erro: "+e.message);}
+  const mov=D.movimentos.find(m=>m.id===id);
+  if(!confirm("Remover esta movimentação? A posição do FII será recalculada a partir do histórico restante."))return;
+  try{
+    await sbDelete('movimentos',id);
+    D.movimentos=D.movimentos.filter(m=>m.id!==id);
+    if(mov)await recalcularPosicao(mov.ticker,mov.tipo);
+    render();
+  }catch(e){alert("Erro: "+e.message);}
 }
 function rMov(){
   let rows="";

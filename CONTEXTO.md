@@ -223,7 +223,7 @@ da verdade, mantida sincronizada com o banco real.
 - Resumo automático de RI por IA (upload de PDF ou link) — cogitado usar um agente agendado
 - Log de decisões dentro do próprio app (não documento separado)
 - Notificações por e-mail para `guilhermelorin56@gmail.com` (FII atingiu preço teto, P/VP < 0,90) — precisaria de serviço tipo Resend
-- Alterar senha pelo próprio app
+- ~~Alterar senha pelo próprio app~~ — feito em 12/08/2026 (botão 🔑 no cabeçalho, também trata login via link de recuperação por email)
 - Relatório PDF mensal
 - Refinamento visual do donut (usuário achou pequeno/simples — adiado)
 

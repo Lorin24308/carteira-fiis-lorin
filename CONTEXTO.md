@@ -59,7 +59,7 @@ antes de começar a aportar nas outras classes de ativo.
 
 **Endereços:**
 - Repositório: `github.com/Lorin24308/carteira-fiis-lorin`
-- Site: `lucent-banoffee-f671e2.netlify.app`
+- Site: `carteiralorin.netlify.app`
 - Supabase: `pcsnkxnxafwqzqrsrkjw.supabase.co`
 - Pasta local: `C:\Users\Guilherme Lorin\Documents\PROJETO\carteira-fiis-projeto`
 

@@ -226,6 +226,28 @@ da verdade, mantida sincronizada com o banco real.
 - ~~Alterar senha pelo próprio app~~ — feito em 12/08/2026 (botão 🔑 no cabeçalho, também trata login via link de recuperação por email)
 - Relatório PDF mensal
 - Refinamento visual do donut (usuário achou pequeno/simples — adiado)
+- **Calculadora de valuation por fluxo de caixa descontado, para o futuro módulo Ações BR** —
+  vista numa ferramenta paga (comunidade "Ward" do Leo, Geração Dividendos, acesso liberado só
+  até 17/08/2026). Modelo DDM (Dividend Discount Model) em duas fases, decodificado a partir dos
+  números exibidos na tela pra PETR4:
+  1. Calcula **Payout médio** e **ROE médio** históricos (últimos 3 ou 5 anos, com toggle).
+  2. Deriva a **taxa de crescimento esperada** pela fórmula de crescimento sustentável:
+     `taxa = ROE × (1 − Payout)`.
+  3. Projeta os próximos anos de Lucro Líquido crescendo a essa taxa.
+  4. Desconta cada ano projetado a valor presente com uma **taxa de desconto** (14% no exemplo,
+     parece configurável; a tela mostra a Selic histórica média como referência):
+     `VPL = lucro projetado ÷ (1 + taxa_desconto)^n`.
+  5. Calcula um **valor de perpetuidade** (fórmula de Gordon) pro período após os anos
+     projetados, com uma taxa de crescimento perpétuo mais conservadora (3% no exemplo, ajustável):
+     `perpetuidade = (último lucro projetado × (1 + taxa_perpétua)) ÷ (taxa_desconto − taxa_perpétua)`,
+     também trazida a valor presente.
+  6. Soma todos os VPLs (anos projetados + perpetuidade) = **market cap justo** calculado.
+  7. Divide pelo número total de ações = **preço justo por ação**.
+  8. Compara com o preço atual de mercado = **% de upside/downside**.
+  9. Tem um botão "Salvar Preço Teto" que grava esse valor calculado — mesmo conceito do campo
+     `pteto` que já existe em `fiis`, só que calculado automaticamente em vez de digitado à mão.
+  Isso poderia alimentar o preço teto do futuro módulo Ações BR automaticamente, sem precisar de
+  uma ferramenta externa.
 
 ---
 

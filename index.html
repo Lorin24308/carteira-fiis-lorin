@@ -400,17 +400,13 @@ tbody tr:hover{background:var(--surface2)}
 <!-- DIVIDENDOS -->
 <div id="page-dividendos" class="page">
   <div class="section">
-    <div class="sh"><div class="st">Registrar dividendo</div></div>
-    <div class="fg">
-      <div><label>Data</label><input id="dv-data" type="date"></div>
-      <div><label>Ticker</label><input id="dv-ticker" placeholder="HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
-      <div><label>Valor total (R$)</label><input id="dv-val" type="number" min="0" step="0.01" placeholder="0,00"></div>
-      <div><label>Mês referência</label><input id="dv-mes" type="month"></div>
+    <div class="sh">
+      <div class="st">Histórico de dividendos</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;color:var(--text2)">Total: <strong id="divid-total">R$ 0,00</strong></span>
+        <button class="btn bp" onclick="openDividModal()">+ Novo Dividendo</button>
+      </div>
     </div>
-    <button class="btn bp" onclick="addDivid()">+ Registrar</button>
-  </div>
-  <div class="section">
-    <div class="sh"><div class="st">Histórico</div><span style="font-size:13px;color:var(--text2)">Total: <strong id="divid-total">R$ 0,00</strong></span></div>
     <table><thead><tr><th>Data</th><th>Ticker</th><th>Mês ref.</th><th>Valor</th><th></th></tr></thead>
     <tbody id="divid-table"></tbody></table>
   </div>
@@ -456,6 +452,22 @@ tbody tr:hover{background:var(--surface2)}
     <div class="modal-footer">
       <button class="btn bs" onclick="closeMovModal()">Cancelar</button>
       <button class="btn bp" onclick="addMov()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO DIVIDENDO -->
+<div class="modal-overlay" id="divid-modal">
+  <div class="modal" style="width:400px">
+    <div class="modal-title">Novo Dividendo</div>
+    <div class="fg">
+      <div><label>Ticker</label><input id="dv-ticker" placeholder="Ex: HGLG11" oninput="this.value=this.value.toUpperCase()"></div>
+      <div><label>Valor total (R$)</label><input id="dv-val" type="number" min="0" step="0.01" placeholder="0,00"></div>
+      <div><label>Data de recebimento</label><input id="dv-data" type="date"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeDividModal()">Cancelar</button>
+      <button class="btn bp" onclick="addDivid()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -1221,16 +1233,33 @@ function simAporteRapido(){
 }
 
 // ── DIVIDENDOS ────────────────────────────────────────────────────────────
+// FIIs pagam no mês corrente referente ao resultado do mês anterior — calcula sozinho.
+function mesReferenciaAnterior(dataStr){
+  const [ano,mes]=dataStr.split('-').map(Number);
+  const d=new Date(ano,mes-2,1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function openDividModal(){
+  document.getElementById("dv-ticker").value="";
+  document.getElementById("dv-val").value="";
+  document.getElementById("dv-data").value=new Date().toISOString().split("T")[0];
+  document.getElementById("divid-modal").classList.add("open");
+}
+function closeDividModal(){
+  document.getElementById("divid-modal").classList.remove("open");
+}
+document.getElementById("divid-modal").addEventListener("click",function(e){if(e.target===this)closeDividModal();});
+
 async function addDivid(){
   const data=document.getElementById("dv-data").value;
   const ticker=document.getElementById("dv-ticker").value.trim().toUpperCase();
   const valor=parseFloat(document.getElementById("dv-val").value)||0;
-  const mes_ref=document.getElementById("dv-mes").value;
-  if(!data||!ticker||valor<=0){alert("Preencha data, ticker e valor.");return;}
+  if(!data||!ticker||valor<=0){alert("Preencha ticker, valor e data.");return;}
+  const mes_ref=mesReferenciaAnterior(data);
   try{
     const[novo]=await sbPost('dividendos',{data,ticker,valor,mes_ref});
     D.dividendos.push(novo);
-    ["dv-data","dv-ticker","dv-val","dv-mes"].forEach(id=>document.getElementById(id).value="");
+    closeDividModal();
     toast("Dividendo registrado!");rDivid();drawDividChart();
     document.getElementById("d-divid").textContent=fmt(D.dividendos.reduce((a,d)=>a+d.valor,0));
   }catch(e){alert("Erro: "+e.message);}

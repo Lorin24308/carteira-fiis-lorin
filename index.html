@@ -217,12 +217,12 @@ tbody tr:hover{background:var(--surface2)}
   <div id="kr-stage" style="position:relative;min-height:100vh;padding:24px">
     <div id="kr-blur-target" style="transition:filter .15s">
 
-    <div id="kr-donut-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px">
-      <svg viewBox="0 0 200 200" width="240" height="240" style="overflow:visible">
+    <div id="kr-donut-wrap" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(70vh,70vw,760px);height:min(70vh,70vw,760px)">
+      <svg viewBox="0 0 200 200" width="100%" height="100%" style="overflow:visible">
         <circle class="kr-arc" cx="100" cy="100" r="92" fill="none" stroke="var(--accent)" stroke-width="9" pointer-events="visibleStroke" style="cursor:pointer" onclick="abrirFiis()"></circle>
         <line class="kr-lead" x1="35" y1="35" x2="8" y2="8" stroke="var(--border2)" stroke-width="1"></line>
       </svg>
-      <div class="kr-lead-txt" style="position:absolute;top:9px;left:9px;transform:translate(-100%,-100%);text-align:right;pointer-events:none">
+      <div class="kr-lead-txt" style="position:absolute;top:4%;left:4%;transform:translate(-100%,-100%);text-align:right;pointer-events:none">
         <div style="font-size:11px;color:var(--text2);white-space:nowrap" id="kr-fii-val">—</div>
         <div style="height:1px;background:var(--border2);margin:3px 0"></div>
         <div style="font-size:11px;color:var(--text3);white-space:nowrap" id="kr-fii-pct">—</div>
